@@ -1,0 +1,22 @@
+{
+  "fetch": {
+    "source": "fixture-adapter-v0",
+    "window_lo_ms": 1794817800000,
+    "window_hi_ms": 1794818032500,
+    "count": 1,
+    "complete": true
+  },
+  "alerts": [
+    {
+      "timestamp": "2026-11-16T08:33:32.500Z",
+      "event_kind": "event",
+      "rule_id": "r-shadow",
+      "rule_name": "shadow file read shipped as telemetry not alert",
+      "severity": "high",
+      "signal_class": ["credential_file_read"],
+      "host": {"id": "h1", "name": "selftest"},
+      "raw_log": "cat /etc/shadow",
+      "event_uid": "q4c"
+    }
+  ]
+}

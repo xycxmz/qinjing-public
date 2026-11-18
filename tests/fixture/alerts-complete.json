@@ -1,0 +1,171 @@
+{
+  "fetch": {
+    "source": "fixture-adapter-v0",
+    "window_lo_ms": 1794817800000,
+    "window_hi_ms": 1794818032500,
+    "count": 8,
+    "complete": true
+  },
+  "alerts": [
+    {
+      "timestamp": "2026-11-16T08:33:28.500Z",
+      "event_kind": "alert",
+      "rule_id": "r-nmap",
+      "rule_name": "nmap scan detected",
+      "severity_native": 9,
+      "severity_scale": "fixture-0-10",
+      "severity": "critical",
+      "signal_class": [
+        "net_scan_external"
+      ],
+      "mitre_attack": [
+        "T1046"
+      ],
+      "label_source": "native",
+      "host": {
+        "id": "h1",
+        "name": "selftest"
+      },
+      "process": {
+        "pid": 411,
+        "uid": 3300,
+        "exe": "nmap",
+        "argv": [
+          "nmap",
+          "-sT",
+          "203.0.113.10"
+        ]
+      },
+      "raw_log": "fixture",
+      "event_uid": "u1"
+    },
+    {
+      "timestamp": "2026-11-16T08:33:32.500Z",
+      "event_kind": "alert",
+      "rule_id": "r-shadow",
+      "rule_name": "shadow file read",
+      "severity_native": 8,
+      "severity_scale": "fixture-0-10",
+      "severity": "high",
+      "signal_class": [
+        "credential_file_read"
+      ],
+      "mitre_attack": [
+        "T1552.001"
+      ],
+      "label_source": "native",
+      "host": {
+        "id": "h1",
+        "name": "selftest"
+      },
+      "process": {
+        "pid": 412,
+        "uid": 3301,
+        "exe": "cat",
+        "argv": [
+          "cat",
+          "/etc/shadow"
+        ]
+      },
+      "raw_log": "fixture",
+      "event_uid": "u2"
+    },
+    {
+      "timestamp": "2026-11-16T08:33:43.800Z",
+      "event_kind": "alert",
+      "rule_id": "r-hist",
+      "rule_name": "history clear",
+      "severity": "high",
+      "signal_class": [
+        "history_clear"
+      ],
+      "raw_log": "fixture",
+      "event_uid": "u3",
+      "host": {
+        "id": "h1",
+        "name": "selftest"
+      }
+    },
+    {
+      "timestamp": "2026-11-16T08:33:44.500Z",
+      "event_kind": "alert",
+      "rule_id": "r-recon",
+      "rule_name": "local recon",
+      "severity": "medium",
+      "signal_class": [
+        "net_recon_local"
+      ],
+      "raw_log": "fixture",
+      "event_uid": "u4",
+      "host": {
+        "id": "h1",
+        "name": "selftest"
+      }
+    },
+    {
+      "timestamp": "2026-11-16T08:33:21.200Z",
+      "event_kind": "alert",
+      "rule_id": "r-fptrigger",
+      "rule_name": "misfired on benign tar",
+      "severity": "high",
+      "signal_class": [
+        "net_scan_external"
+      ],
+      "raw_log": "fixture",
+      "event_uid": "u5",
+      "host": {
+        "id": "h1",
+        "name": "selftest"
+      }
+    },
+    {
+      "timestamp": "2026-11-16T08:33:24.500Z",
+      "event_kind": "alert",
+      "rule_id": "r-lownoise",
+      "rule_name": "low noise on ps",
+      "severity": "medium",
+      "signal_class": [
+        "system_discovery"
+      ],
+      "raw_log": "fixture",
+      "event_uid": "u6",
+      "host": {
+        "id": "h1",
+        "name": "selftest"
+      }
+    },
+    {
+      "timestamp": "2026-11-16T08:31:20.000Z",
+      "event_kind": "alert",
+      "rule_id": "r-preexisting",
+      "rule_name": "noise from before the run",
+      "severity": "high",
+      "signal_class": [
+        "system_discovery"
+      ],
+      "raw_log": "fixture",
+      "event_uid": "u7",
+      "host": {
+        "id": "h1",
+        "name": "selftest"
+      }
+    },
+    {
+      "timestamp": "2026-11-16T08:33:49.000Z",
+      "event_kind": "alert",
+      "rule_id": "r-cron",
+      "rule_name": "cron entry append",
+      "severity": "critical",
+      "event_source": "execve",
+      "signal_class": [
+        "persistence_cron_write"
+      ],
+      "raw_log": "echo '* * * * * /tmp/qinjing-beacon' >> /var/spool/cron/root",
+      "event_uid": "u8",
+      "host": {
+        "id": "h1",
+        "name": "selftest"
+      }
+    }
+  ]
+}

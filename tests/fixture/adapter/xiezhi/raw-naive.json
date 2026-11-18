@@ -1,0 +1,3 @@
+[
+  {"ts": "2026-11-16 08:33:32", "severity": "high", "rule_id": "exec-cred-shadow-read", "argv": "cat /etc/shadow", "id": "n1", "agent_id": "A1", "hostname": "host-a"}
+]

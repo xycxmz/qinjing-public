@@ -1,0 +1,117 @@
+# Selftest fixture corpus: 7 cases covering every verdict path the scorer
+# and fpcheck must distinguish. Timestamps in exec.log and alerts json are
+# all offsets of base ms 1794818000000 (= 2026-11-16T08:33:20Z).
+
+false_positives:
+  - id: F01
+    tactic: BENIGN
+    technique: NONE
+    name: backup hosts file
+    platforms: [linux]
+    cmd: 'tar czf /tmp/qinjing-backup.tar.gz /etc/hosts'
+    bin: tar
+    creates_process: true
+    mode: real
+    expected_signals: []
+    related_signals: []
+    expect: silent
+    impact: temporary
+
+  - id: F02
+    tactic: BENIGN
+    technique: NONE
+    name: list processes
+    platforms: [linux]
+    cmd: 'ps aux'
+    bin: ps
+    creates_process: true
+    mode: real
+    expected_signals: []
+    related_signals: []
+    expect: silent
+    impact: none
+
+attacks:
+  - id: T01
+    tactic: TA0007
+    technique: T1046
+    name: partial-hit nmap scan
+    platforms: [linux]
+    cmd: 'nmap -sT 203.0.113.10'
+    bin: nmap
+    creates_process: true
+    mode: real
+    expected_signals: [net_scan_external, net_recon_local]
+    related_signals: []
+    expect: detectable
+    impact: none
+
+  - id: T02
+    tactic: TA0006
+    technique: T1552.001
+    name: full-hit shadow read
+    platforms: [linux]
+    cmd: 'cat /etc/shadow'
+    bin: cat
+    creates_process: true
+    mode: real
+    expected_signals: [credential_file_read]
+    related_signals: []
+    expect: detectable
+    impact: none
+
+  - id: T03
+    tactic: TA0005
+    technique: T1070.003
+    name: miss history clear
+    platforms: [linux]
+    cmd: 'history -c'
+    bin: '-'
+    creates_process: false
+    mode: sim-builtin
+    expected_signals: [history_clear]
+    related_signals: []
+    expect: detectable
+    impact: none
+
+  - id: T04
+    tactic: TA0006
+    technique: T1003.008
+    name: not-run debugfs dump
+    platforms: [linux]
+    cmd: 'debugfs -R cat /etc/shadow /dev/sda1'
+    bin: debugfs
+    creates_process: false
+    mode: sim-missing-bin
+    expected_signals: [credential_dump_shadow]
+    related_signals: []
+    expect: detectable
+    impact: temporary
+
+  - id: T05
+    tactic: TA0003
+    technique: T1053.003
+    name: builtin cron append with absent bin probe
+    platforms: [linux]
+    cmd: 'echo ''* * * * * /tmp/qinjing-beacon'' >> /var/spool/cron/root'
+    bin: '-'
+    creates_process: false
+    mode: sim-builtin
+    expected_signals: [persistence_cron_write]
+    related_signals: []
+    expect: detectable
+    impact: destructive
+
+  - id: G01
+    tactic: TA0007
+    technique: T1082
+    name: gap system probe
+    platforms: [linux]
+    cmd: 'uname -a'
+    bin: uname
+    creates_process: true
+    mode: real
+    expected_signals: []
+    related_signals: []
+    expect: gap
+    impact: none

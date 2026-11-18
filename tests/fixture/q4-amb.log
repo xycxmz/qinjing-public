@@ -1,0 +1,4 @@
+# QINJING start=1794818000000 host=selftest isolate=1 sleep=2 timeout=10 plan=2 subset=T01,T02
+1794818012000	1794818013000	T01	attack	3300	1	0	nmap -sT 203.0.113.10
+1794818012400	1794818013400	T02	attack	3301	1	0	cat /etc/shadow
+# QINJING-END rows=2 transport_fail=0 rc=0

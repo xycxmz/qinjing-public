@@ -1,0 +1,4 @@
+[
+  {"ts": "2026-11-16T08:33:21.200Z", "severity": "high", "rule_id": "firstseen/host-alpha", "argv": "context digest", "id": "f1"},
+  {"ts": "2026-11-16T08:33:32.500Z", "severity": "high", "rule_id": "exec-cred-shadow-read", "argv": "cat /etc/shadow", "id": "f2", "agent_id": "A1", "hostname": "host-a"}
+]

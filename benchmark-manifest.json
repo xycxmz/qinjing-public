@@ -1,0 +1,37 @@
+{
+  "benchmark": "qinjing",
+  "frozen_at": "2026-11-18T22:00:00+08:00",
+  "corpus": {
+    "sha256": "b96afcd3b81b7c71991a06d07e79ee6df439595c0e852b6c1b6eb5430a4dd6a3",
+    "cases": 1075,
+    "fp": 120,
+    "attack": 955,
+    "signal_classes": 52
+  },
+  "matrix": {
+    "file": "data/attack-enterprise.txt",
+    "sha256": "59a666c04ac156f4b5d2d249affa0a57ab31057346bb116334cbd342c0eb441c",
+    "source": "mitre-attack/attack-stix-data tag v20.1 (MITRE custom license, see NOTICE)"
+  },
+  "scorer": {
+    "sha256": "062fe367d71d93b598ad19762671fb7ca3cf0b0d97812c55e543d290767437a9",
+    "calibre": "v2.2"
+  },
+  "adapter": {
+    "reference": "xiezhi",
+    "rule_map_sha": "41e5625924a074e4683101d9aa84d91d26078b42ff924f4520692e452558a73c",
+    "event_sources_sha": "35a3547cdb488158c7d30553b8d42a1d4988ba8a1e91038a78cbec40e3933842"
+  },
+  "config": {
+    "min_severity": "high",
+    "grace_ms": 3500,
+    "tolerance_ms": 2500,
+    "stray_margin_ms": 60000
+  },
+  "secondary_anchors": {
+    "file": "data/secondary-anchors.tsv",
+    "pairs": 23,
+    "sha256": "608b8b3372b72258dd306288e2e1b33bbd6b128c153442a1755dfc48000856a1"
+  },
+  "version": "2026.11"
+}

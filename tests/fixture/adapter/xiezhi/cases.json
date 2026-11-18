@@ -1,0 +1,130 @@
+[
+ {
+  "id": "A01",
+  "raw": "raw-empty.json",
+  "flags": [
+   "--complete"
+  ],
+  "expect": {
+   "exit": 0,
+   "complete": true,
+   "alerts": 0
+  }
+ },
+ {
+  "id": "A02",
+  "raw": "raw-three.json",
+  "flags": [],
+  "expect": {
+   "exit": 0,
+   "complete": false,
+   "alerts": 3
+  }
+ },
+ {
+  "id": "A05",
+  "raw": "raw-naive.json",
+  "flags": [
+   "--complete"
+  ],
+  "expect": {
+   "exit": 0,
+   "complete": true,
+   "alerts": 1,
+   "ts_offset_all": true
+  }
+ },
+ {
+  "id": "A06",
+  "raw": "raw-nohost.json",
+  "flags": [
+   "--complete"
+  ],
+  "expect": {
+   "exit": 0,
+   "alerts": 1,
+   "host_missing": 1,
+   "no_host_key_rules": [
+    "exec-cred-shadow-read"
+   ]
+  }
+ },
+ {
+  "id": "A07",
+  "raw": "raw-firstseen.json",
+  "flags": [
+   "--complete"
+  ],
+  "expect": {
+   "exit": 0,
+   "alerts": 1,
+   "dropped_firstseen": 1
+  }
+ },
+ {
+  "id": "A08",
+  "raw": "raw-badsev.json",
+  "flags": [
+   "--complete"
+  ],
+  "expect": {
+   "exit": 1,
+   "stderr_contains": "unknown severity"
+  }
+ },
+ {
+  "id": "A09",
+  "raw": "raw-unmapped.json",
+  "flags": [
+   "--complete"
+  ],
+  "expect": {
+   "exit": 0,
+   "alerts": 1,
+   "signal_empty_rules": [
+    "brand-new-rule"
+   ]
+  }
+ },
+ {
+  "id": "A10",
+  "raw": "raw-mixed.json",
+  "flags": [
+   "--complete"
+  ],
+  "expect": {
+   "exit": 0,
+   "alerts": 2,
+   "host_of": {
+    "r-a": [
+     "A1",
+     "host-a"
+    ],
+    "r-b": [
+     "B2",
+     "host-b"
+    ]
+   }
+  }
+ },
+ {
+  "id": "A11",
+  "raw": "raw-module.json",
+  "flags": [
+   "--complete"
+  ],
+  "expect": {
+   "exit": 0,
+   "alerts": 1,
+   "event_source_of": {
+    "module-load-init": "module_load"
+   },
+   "host_of": {
+    "module-load-init": [
+     "A1",
+     "host-a"
+    ]
+   }
+  }
+ }
+]

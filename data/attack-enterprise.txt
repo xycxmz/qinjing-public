@@ -1,0 +1,888 @@
+# ATT&CK Enterprise technique x tactic pairs (active only).
+# Source: mitre-attack/attack-stix-data tag v20.1, pinned to ATT&CK 20.1.
+# (c) 2026 The MITRE Corporation. Reproduced and distributed with the
+# permission of The MITRE Corporation under MITRE's custom license
+# (not the MIT license; full license text in NOTICE).
+# Regenerate: tools/gen_attack_matrix.py enterprise-attack.json data/attack-enterprise.txt --attack-version 20.1
+# Columns: technique_id\ttactic_id\tname
+T1001	TA0011	Data Obfuscation
+T1001.001	TA0011	Junk Data
+T1001.002	TA0011	Steganography
+T1001.003	TA0011	Protocol or Service Impersonation
+T1003	TA0006	OS Credential Dumping
+T1003.001	TA0006	LSASS Memory
+T1003.002	TA0006	Security Account Manager
+T1003.003	TA0006	NTDS
+T1003.004	TA0006	LSA Secrets
+T1003.005	TA0006	Cached Domain Credentials
+T1003.006	TA0006	DCSync
+T1003.007	TA0006	Proc Filesystem
+T1003.008	TA0006	/etc/passwd and /etc/shadow
+T1005	TA0009	Data from Local System
+T1006	TA0005	Direct Volume Access
+T1007	TA0007	System Service Discovery
+T1008	TA0011	Fallback Channels
+T1010	TA0007	Application Window Discovery
+T1011	TA0010	Exfiltration Over Other Network Medium
+T1011.001	TA0010	Exfiltration Over Bluetooth
+T1012	TA0007	Query Registry
+T1014	TA0005	Rootkit
+T1016	TA0007	System Network Configuration Discovery
+T1016.001	TA0007	Internet Connection Discovery
+T1016.002	TA0007	Wi-Fi Discovery
+T1018	TA0007	Remote System Discovery
+T1020	TA0010	Automated Exfiltration
+T1020.001	TA0010	Traffic Duplication
+T1021	TA0008	Remote Services
+T1021.001	TA0008	Remote Desktop Protocol
+T1021.002	TA0008	SMB/Windows Admin Shares
+T1021.003	TA0008	Distributed Component Object Model
+T1021.004	TA0008	SSH
+T1021.005	TA0008	VNC
+T1021.006	TA0008	Windows Remote Management
+T1021.007	TA0008	Cloud Services
+T1021.008	TA0008	Direct Cloud VM Connections
+T1025	TA0009	Data from Removable Media
+T1027	TA0005	Obfuscated Files or Information
+T1027.001	TA0005	Binary Padding
+T1027.002	TA0005	Software Packing
+T1027.003	TA0005	Steganography
+T1027.004	TA0005	Compile After Delivery
+T1027.005	TA0005	Indicator Removal from Tools
+T1027.006	TA0005	HTML Smuggling
+T1027.007	TA0005	Dynamic API Resolution
+T1027.008	TA0005	Stripped Payloads
+T1027.009	TA0005	Embedded Payloads
+T1027.010	TA0005	Command Obfuscation
+T1027.011	TA0005	Fileless Storage
+T1027.012	TA0005	LNK Icon Smuggling
+T1027.013	TA0005	Encrypted/Encoded File
+T1027.014	TA0005	Polymorphic Code
+T1027.015	TA0005	Compression
+T1027.016	TA0005	Junk Code Insertion
+T1027.017	TA0005	SVG Smuggling
+T1027.018	TA0005	Invisible Unicode
+T1029	TA0010	Scheduled Transfer
+T1030	TA0010	Data Transfer Size Limits
+T1033	TA0007	System Owner/User Discovery
+T1036	TA0005	Masquerading
+T1036.001	TA0005	Invalid Code Signature
+T1036.002	TA0005	Right-to-Left Override
+T1036.003	TA0005	Rename Legitimate Utilities
+T1036.004	TA0005	Masquerade Task or Service
+T1036.005	TA0005	Match Legitimate Resource Name or Location
+T1036.006	TA0005	Space after Filename
+T1036.007	TA0005	Double File Extension
+T1036.008	TA0005	Masquerade File Type
+T1036.009	TA0005	Break Process Trees
+T1036.010	TA0005	Masquerade Account Name
+T1036.011	TA0005	Overwrite Process Arguments
+T1036.012	TA0005	Browser Fingerprint
+T1037	TA0003	Boot or Logon Initialization Scripts
+T1037	TA0004	Boot or Logon Initialization Scripts
+T1037.001	TA0003	Logon Script (Windows)
+T1037.001	TA0004	Logon Script (Windows)
+T1037.002	TA0003	Login Hook
+T1037.002	TA0004	Login Hook
+T1037.003	TA0003	Network Logon Script
+T1037.003	TA0004	Network Logon Script
+T1037.004	TA0003	RC Scripts
+T1037.004	TA0004	RC Scripts
+T1037.005	TA0003	Startup Items
+T1037.005	TA0004	Startup Items
+T1039	TA0009	Data from Network Shared Drive
+T1040	TA0006	Network Sniffing
+T1040	TA0007	Network Sniffing
+T1041	TA0010	Exfiltration Over C2 Channel
+T1046	TA0007	Network Service Discovery
+T1047	TA0002	Windows Management Instrumentation
+T1048	TA0010	Exfiltration Over Alternative Protocol
+T1048.001	TA0010	Exfiltration Over Symmetric Encrypted Non-C2 Protocol
+T1048.002	TA0010	Exfiltration Over Asymmetric Encrypted Non-C2 Protocol
+T1048.003	TA0010	Exfiltration Over Unencrypted Non-C2 Protocol
+T1049	TA0007	System Network Connections Discovery
+T1052	TA0010	Exfiltration Over Physical Medium
+T1052.001	TA0010	Exfiltration over USB
+T1053	TA0002	Scheduled Task/Job
+T1053	TA0003	Scheduled Task/Job
+T1053	TA0004	Scheduled Task/Job
+T1053.002	TA0002	At
+T1053.002	TA0003	At
+T1053.002	TA0004	At
+T1053.003	TA0002	Cron
+T1053.003	TA0003	Cron
+T1053.003	TA0004	Cron
+T1053.005	TA0002	Scheduled Task
+T1053.005	TA0003	Scheduled Task
+T1053.005	TA0004	Scheduled Task
+T1053.006	TA0002	Systemd Timers
+T1053.006	TA0003	Systemd Timers
+T1053.006	TA0004	Systemd Timers
+T1053.007	TA0002	Container Orchestration Job
+T1053.007	TA0003	Container Orchestration Job
+T1053.007	TA0004	Container Orchestration Job
+T1055	TA0004	Process Injection
+T1055	TA0005	Process Injection
+T1055.001	TA0004	Dynamic-link Library Injection
+T1055.001	TA0005	Dynamic-link Library Injection
+T1055.002	TA0004	Portable Executable Injection
+T1055.002	TA0005	Portable Executable Injection
+T1055.003	TA0004	Thread Execution Hijacking
+T1055.003	TA0005	Thread Execution Hijacking
+T1055.004	TA0004	Asynchronous Procedure Call
+T1055.004	TA0005	Asynchronous Procedure Call
+T1055.005	TA0004	Thread Local Storage
+T1055.005	TA0005	Thread Local Storage
+T1055.008	TA0004	Ptrace System Calls
+T1055.008	TA0005	Ptrace System Calls
+T1055.009	TA0004	Proc Memory
+T1055.009	TA0005	Proc Memory
+T1055.011	TA0004	Extra Window Memory Injection
+T1055.011	TA0005	Extra Window Memory Injection
+T1055.012	TA0004	Process Hollowing
+T1055.012	TA0005	Process Hollowing
+T1055.013	TA0004	Process Doppelg?nging
+T1055.013	TA0005	Process Doppelg?nging
+T1055.014	TA0004	VDSO Hijacking
+T1055.014	TA0005	VDSO Hijacking
+T1055.015	TA0004	ListPlanting
+T1055.015	TA0005	ListPlanting
+T1056	TA0006	Input Capture
+T1056	TA0009	Input Capture
+T1056.001	TA0006	Keylogging
+T1056.001	TA0009	Keylogging
+T1056.002	TA0006	GUI Input Capture
+T1056.002	TA0009	GUI Input Capture
+T1056.003	TA0006	Web Portal Capture
+T1056.003	TA0009	Web Portal Capture
+T1056.004	TA0006	Credential API Hooking
+T1056.004	TA0009	Credential API Hooking
+T1057	TA0007	Process Discovery
+T1059	TA0002	Command and Scripting Interpreter
+T1059.001	TA0002	PowerShell
+T1059.002	TA0002	AppleScript
+T1059.003	TA0002	Windows Command Shell
+T1059.004	TA0002	Unix Shell
+T1059.005	TA0002	Visual Basic
+T1059.006	TA0002	Python
+T1059.007	TA0002	JavaScript
+T1059.008	TA0002	Network Device CLI
+T1059.009	TA0002	Cloud API
+T1059.010	TA0002	AutoHotKey & AutoIT
+T1059.011	TA0002	Lua
+T1059.012	TA0002	Hypervisor CLI
+T1059.013	TA0002	Container CLI/API
+T1068	TA0004	Exploitation for Privilege Escalation
+T1069	TA0007	Permission Groups Discovery
+T1069.001	TA0007	Local Groups
+T1069.002	TA0007	Domain Groups
+T1069.003	TA0007	Cloud Groups
+T1070	TA0005	Indicator Removal
+T1070.003	TA0005	Clear Command History
+T1070.004	TA0005	File Deletion
+T1070.005	TA0005	Network Share Connection Removal
+T1070.006	TA0005	Timestomp
+T1070.007	TA0005	Clear Network Connection History and Configurations
+T1070.008	TA0005	Clear Mailbox Data
+T1070.009	TA0005	Clear Persistence
+T1070.010	TA0005	Relocate Malware
+T1071	TA0011	Application Layer Protocol
+T1071.001	TA0011	Web Protocols
+T1071.002	TA0011	File Transfer Protocols
+T1071.003	TA0011	Mail Protocols
+T1071.004	TA0011	DNS
+T1071.005	TA0011	Publish/Subscribe Protocols
+T1072	TA0002	Software Deployment Tools
+T1072	TA0008	Software Deployment Tools
+T1074	TA0009	Data Staged
+T1074.001	TA0009	Local Data Staging
+T1074.002	TA0009	Remote Data Staging
+T1078	TA0001	Valid Accounts
+T1078	TA0003	Valid Accounts
+T1078	TA0004	Valid Accounts
+T1078	TA0005	Valid Accounts
+T1078.001	TA0001	Default Accounts
+T1078.001	TA0003	Default Accounts
+T1078.001	TA0004	Default Accounts
+T1078.001	TA0005	Default Accounts
+T1078.002	TA0001	Domain Accounts
+T1078.002	TA0003	Domain Accounts
+T1078.002	TA0004	Domain Accounts
+T1078.002	TA0005	Domain Accounts
+T1078.003	TA0001	Local Accounts
+T1078.003	TA0003	Local Accounts
+T1078.003	TA0004	Local Accounts
+T1078.003	TA0005	Local Accounts
+T1078.004	TA0001	Cloud Accounts
+T1078.004	TA0003	Cloud Accounts
+T1078.004	TA0004	Cloud Accounts
+T1078.004	TA0005	Cloud Accounts
+T1080	TA0008	Taint Shared Content
+T1082	TA0007	System Information Discovery
+T1083	TA0007	File and Directory Discovery
+T1087	TA0007	Account Discovery
+T1087.001	TA0007	Local Account
+T1087.002	TA0007	Domain Account
+T1087.003	TA0007	Email Account
+T1087.004	TA0007	Cloud Account
+T1090	TA0011	Proxy
+T1090.001	TA0011	Internal Proxy
+T1090.002	TA0011	External Proxy
+T1090.003	TA0011	Multi-hop Proxy
+T1090.004	TA0011	Domain Fronting
+T1091	TA0001	Replication Through Removable Media
+T1091	TA0008	Replication Through Removable Media
+T1092	TA0011	Communication Through Removable Media
+T1095	TA0011	Non-Application Layer Protocol
+T1098	TA0003	Account Manipulation
+T1098	TA0004	Account Manipulation
+T1098.001	TA0003	Additional Cloud Credentials
+T1098.001	TA0004	Additional Cloud Credentials
+T1098.002	TA0003	Additional Email Delegate Permissions
+T1098.002	TA0004	Additional Email Delegate Permissions
+T1098.003	TA0003	Additional Cloud Roles
+T1098.003	TA0004	Additional Cloud Roles
+T1098.004	TA0003	SSH Authorized Keys
+T1098.004	TA0004	SSH Authorized Keys
+T1098.005	TA0003	Device Registration
+T1098.005	TA0004	Device Registration
+T1098.006	TA0003	Additional Container Cluster Roles
+T1098.006	TA0004	Additional Container Cluster Roles
+T1098.007	TA0003	Additional Local or Domain Groups
+T1098.007	TA0004	Additional Local or Domain Groups
+T1102	TA0011	Web Service
+T1102.001	TA0011	Dead Drop Resolver
+T1102.002	TA0011	Bidirectional Communication
+T1102.003	TA0011	One-Way Communication
+T1104	TA0011	Multi-Stage Channels
+T1105	TA0011	Ingress Tool Transfer
+T1106	TA0002	Native API
+T1110	TA0006	Brute Force
+T1110.001	TA0006	Password Guessing
+T1110.002	TA0006	Password Cracking
+T1110.003	TA0006	Password Spraying
+T1110.004	TA0006	Credential Stuffing
+T1111	TA0006	Multi-Factor Authentication Interception
+T1112	TA0003	Modify Registry
+T1112	TA0112	Modify Registry
+T1113	TA0009	Screen Capture
+T1114	TA0009	Email Collection
+T1114.001	TA0009	Local Email Collection
+T1114.002	TA0009	Remote Email Collection
+T1114.003	TA0009	Email Forwarding Rule
+T1115	TA0009	Clipboard Data
+T1119	TA0009	Automated Collection
+T1120	TA0007	Peripheral Device Discovery
+T1123	TA0009	Audio Capture
+T1124	TA0007	System Time Discovery
+T1125	TA0009	Video Capture
+T1127	TA0002	Trusted Developer Utilities Proxy Execution
+T1127	TA0005	Trusted Developer Utilities Proxy Execution
+T1127.001	TA0002	MSBuild
+T1127.001	TA0005	MSBuild
+T1127.002	TA0002	ClickOnce
+T1127.002	TA0005	ClickOnce
+T1127.003	TA0002	JamPlus
+T1127.003	TA0005	JamPlus
+T1129	TA0002	Shared Modules
+T1132	TA0011	Data Encoding
+T1132.001	TA0011	Standard Encoding
+T1132.002	TA0011	Non-Standard Encoding
+T1133	TA0001	External Remote Services
+T1133	TA0003	External Remote Services
+T1134	TA0004	Access Token Manipulation
+T1134	TA0005	Access Token Manipulation
+T1134.001	TA0004	Token Impersonation/Theft
+T1134.001	TA0005	Token Impersonation/Theft
+T1134.002	TA0004	Create Process with Token
+T1134.002	TA0005	Create Process with Token
+T1134.003	TA0004	Make and Impersonate Token
+T1134.003	TA0005	Make and Impersonate Token
+T1134.004	TA0004	Parent PID Spoofing
+T1134.004	TA0005	Parent PID Spoofing
+T1134.005	TA0004	SID-History Injection
+T1134.005	TA0005	SID-History Injection
+T1135	TA0007	Network Share Discovery
+T1136	TA0003	Create Account
+T1136.001	TA0003	Local Account
+T1136.002	TA0003	Domain Account
+T1136.003	TA0003	Cloud Account
+T1137	TA0003	Office Application Startup
+T1137.001	TA0003	Office Template Macros
+T1137.002	TA0003	Office Test
+T1137.003	TA0003	Outlook Forms
+T1137.004	TA0003	Outlook Home Page
+T1137.005	TA0003	Outlook Rules
+T1137.006	TA0003	Add-ins
+T1140	TA0005	Deobfuscate/Decode Files or Information
+T1176	TA0003	Software Extensions
+T1176.001	TA0003	Browser Extensions
+T1176.002	TA0003	IDE Extensions
+T1185	TA0009	Browser Session Hijacking
+T1187	TA0006	Forced Authentication
+T1189	TA0001	Drive-by Compromise
+T1190	TA0001	Exploit Public-Facing Application
+T1195	TA0001	Supply Chain Compromise
+T1195.001	TA0001	Compromise Software Dependencies and Development Tools
+T1195.002	TA0001	Compromise Software Supply Chain
+T1195.003	TA0001	Compromise Hardware Supply Chain
+T1197	TA0002	BITS Jobs
+T1197	TA0003	BITS Jobs
+T1197	TA0005	BITS Jobs
+T1199	TA0001	Trusted Relationship
+T1200	TA0001	Hardware Additions
+T1201	TA0007	Password Policy Discovery
+T1202	TA0005	Indirect Command Execution
+T1203	TA0002	Exploitation for Client Execution
+T1204	TA0002	User Execution
+T1204.001	TA0002	Malicious Link
+T1204.002	TA0002	Malicious File
+T1204.003	TA0002	Malicious Image
+T1204.004	TA0002	Malicious Copy and Paste
+T1204.005	TA0002	Malicious Library
+T1205	TA0003	Traffic Signaling
+T1205	TA0005	Traffic Signaling
+T1205	TA0011	Traffic Signaling
+T1205.001	TA0003	Port Knocking
+T1205.001	TA0005	Port Knocking
+T1205.001	TA0011	Port Knocking
+T1205.002	TA0003	Socket Filters
+T1205.002	TA0005	Socket Filters
+T1205.002	TA0011	Socket Filters
+T1207	TA0112	Rogue Domain Controller
+T1210	TA0008	Exploitation of Remote Services
+T1211	TA0005	Exploitation for Stealth
+T1212	TA0006	Exploitation for Credential Access
+T1213	TA0009	Data from Information Repositories
+T1213.001	TA0009	Confluence
+T1213.002	TA0009	Sharepoint
+T1213.003	TA0009	Code Repositories
+T1213.004	TA0009	Customer Relationship Management Software
+T1213.005	TA0009	Messaging Applications
+T1213.006	TA0009	Databases
+T1216	TA0005	System Script Proxy Execution
+T1216.001	TA0005	PubPrn
+T1216.002	TA0005	SyncAppvPublishingServer
+T1217	TA0007	Browser Information Discovery
+T1218	TA0005	System Binary Proxy Execution
+T1218.001	TA0005	Compiled HTML File
+T1218.002	TA0005	Control Panel
+T1218.003	TA0005	CMSTP
+T1218.004	TA0005	InstallUtil
+T1218.005	TA0005	Mshta
+T1218.007	TA0005	Msiexec
+T1218.008	TA0005	Odbcconf
+T1218.009	TA0005	Regsvcs/Regasm
+T1218.010	TA0005	Regsvr32
+T1218.011	TA0005	Rundll32
+T1218.012	TA0005	Verclsid
+T1218.013	TA0005	Mavinject
+T1218.014	TA0005	MMC
+T1218.015	TA0005	Electron Applications
+T1219	TA0011	Remote Access Tools
+T1219.001	TA0011	IDE Tunneling
+T1219.002	TA0011	Remote Desktop Software
+T1219.003	TA0011	Remote Access Hardware
+T1220	TA0005	XSL Script Processing
+T1221	TA0005	Template Injection
+T1222	TA0112	File and Directory Permissions Modification
+T1222.001	TA0112	Windows Permissions
+T1222.002	TA0112	Linux and Mac Permissions
+T1480	TA0005	Execution Guardrails
+T1480.001	TA0005	Environmental Keying
+T1480.002	TA0005	Mutual Exclusion
+T1482	TA0007	Domain Trust Discovery
+T1484	TA0004	Domain or Tenant Policy Modification
+T1484	TA0112	Domain or Tenant Policy Modification
+T1484.001	TA0004	Group Policy Modification
+T1484.001	TA0112	Group Policy Modification
+T1484.002	TA0004	Trust Modification
+T1484.002	TA0112	Trust Modification
+T1485	TA0040	Data Destruction
+T1485.001	TA0040	Lifecycle-Triggered Deletion
+T1486	TA0040	Data Encrypted for Impact
+T1489	TA0040	Service Stop
+T1490	TA0040	Inhibit System Recovery
+T1491	TA0040	Defacement
+T1491.001	TA0040	Internal Defacement
+T1491.002	TA0040	External Defacement
+T1495	TA0040	Firmware Corruption
+T1496	TA0040	Resource Hijacking
+T1496.001	TA0040	Compute Hijacking
+T1496.002	TA0040	Bandwidth Hijacking
+T1496.003	TA0040	SMS Pumping
+T1496.004	TA0040	Cloud Service Hijacking
+T1497	TA0005	Virtualization/Sandbox Evasion
+T1497	TA0007	Virtualization/Sandbox Evasion
+T1497.001	TA0005	System Checks
+T1497.001	TA0007	System Checks
+T1497.002	TA0005	User Activity Based Checks
+T1497.002	TA0007	User Activity Based Checks
+T1497.003	TA0005	Time Based Checks
+T1497.003	TA0007	Time Based Checks
+T1498	TA0040	Network Denial of Service
+T1498.001	TA0040	Direct Network Flood
+T1498.002	TA0040	Reflection Amplification
+T1499	TA0040	Endpoint Denial of Service
+T1499.001	TA0040	OS Exhaustion Flood
+T1499.002	TA0040	Service Exhaustion Flood
+T1499.003	TA0040	Application Exhaustion Flood
+T1499.004	TA0040	Application or System Exploitation
+T1505	TA0003	Server Software Component
+T1505.001	TA0003	SQL Stored Procedures
+T1505.002	TA0003	Transport Agent
+T1505.003	TA0003	Web Shell
+T1505.004	TA0003	IIS Components
+T1505.005	TA0003	Terminal Services DLL
+T1505.006	TA0003	vSphere Installation Bundles
+T1518	TA0007	Software Discovery
+T1518.001	TA0007	Security Software Discovery
+T1518.002	TA0007	Backup Software Discovery
+T1525	TA0003	Implant Internal Image
+T1526	TA0007	Cloud Service Discovery
+T1528	TA0006	Steal Application Access Token
+T1529	TA0040	System Shutdown/Reboot
+T1530	TA0009	Data from Cloud Storage
+T1531	TA0040	Account Access Removal
+T1534	TA0008	Internal Spearphishing
+T1535	TA0005	Unused/Unsupported Cloud Regions
+T1537	TA0010	Transfer Data to Cloud Account
+T1538	TA0007	Cloud Service Dashboard
+T1539	TA0006	Steal Web Session Cookie
+T1542	TA0003	Pre-OS Boot
+T1542	TA0005	Pre-OS Boot
+T1542.001	TA0003	System Firmware
+T1542.001	TA0005	System Firmware
+T1542.002	TA0003	Component Firmware
+T1542.002	TA0005	Component Firmware
+T1542.003	TA0003	Bootkit
+T1542.003	TA0005	Bootkit
+T1542.004	TA0003	ROMMONkit
+T1542.004	TA0005	ROMMONkit
+T1542.005	TA0003	TFTP Boot
+T1542.005	TA0005	TFTP Boot
+T1543	TA0003	Create or Modify System Process
+T1543	TA0004	Create or Modify System Process
+T1543.001	TA0003	Launch Agent
+T1543.001	TA0004	Launch Agent
+T1543.002	TA0003	Systemd Service
+T1543.002	TA0004	Systemd Service
+T1543.003	TA0003	Windows Service
+T1543.003	TA0004	Windows Service
+T1543.004	TA0003	Launch Daemon
+T1543.004	TA0004	Launch Daemon
+T1543.005	TA0003	Container Service
+T1543.005	TA0004	Container Service
+T1546	TA0003	Event Triggered Execution
+T1546	TA0004	Event Triggered Execution
+T1546.001	TA0003	Change Default File Association
+T1546.001	TA0004	Change Default File Association
+T1546.002	TA0003	Screensaver
+T1546.002	TA0004	Screensaver
+T1546.003	TA0003	Windows Management Instrumentation Event Subscription
+T1546.003	TA0004	Windows Management Instrumentation Event Subscription
+T1546.004	TA0003	Unix Shell Configuration Modification
+T1546.004	TA0004	Unix Shell Configuration Modification
+T1546.005	TA0003	Trap
+T1546.005	TA0004	Trap
+T1546.006	TA0003	LC_LOAD_DYLIB Addition
+T1546.006	TA0004	LC_LOAD_DYLIB Addition
+T1546.007	TA0003	Netsh Helper DLL
+T1546.007	TA0004	Netsh Helper DLL
+T1546.008	TA0003	Accessibility Features
+T1546.008	TA0004	Accessibility Features
+T1546.009	TA0003	AppCert DLLs
+T1546.009	TA0004	AppCert DLLs
+T1546.010	TA0003	AppInit DLLs
+T1546.010	TA0004	AppInit DLLs
+T1546.011	TA0003	Application Shimming
+T1546.011	TA0004	Application Shimming
+T1546.012	TA0003	Image File Execution Options Injection
+T1546.012	TA0004	Image File Execution Options Injection
+T1546.013	TA0003	PowerShell Profile
+T1546.013	TA0004	PowerShell Profile
+T1546.014	TA0003	Emond
+T1546.014	TA0004	Emond
+T1546.015	TA0003	Component Object Model Hijacking
+T1546.015	TA0004	Component Object Model Hijacking
+T1546.016	TA0003	Installer Packages
+T1546.016	TA0004	Installer Packages
+T1546.017	TA0003	Udev Rules
+T1546.017	TA0004	Udev Rules
+T1546.018	TA0003	Python Startup Hooks
+T1546.018	TA0004	Python Startup Hooks
+T1547	TA0003	Boot or Logon Autostart Execution
+T1547	TA0004	Boot or Logon Autostart Execution
+T1547.001	TA0003	Registry Run Keys / Startup Folder
+T1547.001	TA0004	Registry Run Keys / Startup Folder
+T1547.002	TA0003	Authentication Package
+T1547.002	TA0004	Authentication Package
+T1547.003	TA0003	Time Providers
+T1547.003	TA0004	Time Providers
+T1547.004	TA0003	Winlogon Helper DLL
+T1547.004	TA0004	Winlogon Helper DLL
+T1547.005	TA0003	Security Support Provider
+T1547.005	TA0004	Security Support Provider
+T1547.006	TA0003	Kernel Modules and Extensions
+T1547.006	TA0004	Kernel Modules and Extensions
+T1547.007	TA0003	Re-opened Applications
+T1547.007	TA0004	Re-opened Applications
+T1547.008	TA0003	LSASS Driver
+T1547.008	TA0004	LSASS Driver
+T1547.009	TA0003	Shortcut Modification
+T1547.009	TA0004	Shortcut Modification
+T1547.010	TA0003	Port Monitors
+T1547.010	TA0004	Port Monitors
+T1547.012	TA0003	Print Processors
+T1547.012	TA0004	Print Processors
+T1547.013	TA0003	XDG Autostart Entries
+T1547.013	TA0004	XDG Autostart Entries
+T1547.014	TA0003	Active Setup
+T1547.014	TA0004	Active Setup
+T1547.015	TA0003	Login Items
+T1547.015	TA0004	Login Items
+T1548	TA0004	Abuse Elevation Control Mechanism
+T1548.001	TA0004	Setuid and Setgid
+T1548.002	TA0004	Bypass User Account Control
+T1548.003	TA0004	Sudo and Sudo Caching
+T1548.004	TA0004	Elevated Execution with Prompt
+T1548.005	TA0004	Temporary Elevated Cloud Access
+T1548.006	TA0004	TCC Manipulation
+T1550	TA0008	Use Alternate Authentication Material
+T1550.001	TA0008	Application Access Token
+T1550.002	TA0008	Pass the Hash
+T1550.003	TA0008	Pass the Ticket
+T1550.004	TA0008	Web Session Cookie
+T1552	TA0006	Unsecured Credentials
+T1552.001	TA0006	Credentials In Files
+T1552.002	TA0006	Credentials in Registry
+T1552.003	TA0006	Shell History
+T1552.004	TA0006	Private Keys
+T1552.005	TA0006	Cloud Instance Metadata API
+T1552.006	TA0006	Group Policy Preferences
+T1552.007	TA0006	Container API
+T1552.008	TA0006	Chat Messages
+T1553	TA0112	Subvert Trust Controls
+T1553.001	TA0112	Gatekeeper Bypass
+T1553.002	TA0112	Code Signing
+T1553.003	TA0112	SIP and Trust Provider Hijacking
+T1553.004	TA0112	Install Root Certificate
+T1553.005	TA0112	Mark-of-the-Web Bypass
+T1553.006	TA0112	Code Signing Policy Modification
+T1554	TA0003	Compromise Host Software Binary
+T1555	TA0006	Credentials from Password Stores
+T1555.001	TA0006	Keychain
+T1555.002	TA0006	Securityd Memory
+T1555.003	TA0006	Credentials from Web Browsers
+T1555.004	TA0006	Windows Credential Manager
+T1555.005	TA0006	Password Managers
+T1555.006	TA0006	Cloud Secrets Management Stores
+T1556	TA0003	Modify Authentication Process
+T1556	TA0006	Modify Authentication Process
+T1556	TA0112	Modify Authentication Process
+T1556.001	TA0003	Domain Controller Authentication
+T1556.001	TA0006	Domain Controller Authentication
+T1556.001	TA0112	Domain Controller Authentication
+T1556.002	TA0003	Password Filter DLL
+T1556.002	TA0006	Password Filter DLL
+T1556.002	TA0112	Password Filter DLL
+T1556.003	TA0003	Pluggable Authentication Modules
+T1556.003	TA0006	Pluggable Authentication Modules
+T1556.003	TA0112	Pluggable Authentication Modules
+T1556.004	TA0003	Network Device Authentication
+T1556.004	TA0006	Network Device Authentication
+T1556.004	TA0112	Network Device Authentication
+T1556.005	TA0003	Reversible Encryption
+T1556.005	TA0006	Reversible Encryption
+T1556.005	TA0112	Reversible Encryption
+T1556.006	TA0003	Multi-Factor Authentication
+T1556.006	TA0006	Multi-Factor Authentication
+T1556.006	TA0112	Multi-Factor Authentication
+T1556.007	TA0003	Hybrid Identity
+T1556.007	TA0006	Hybrid Identity
+T1556.007	TA0112	Hybrid Identity
+T1556.008	TA0003	Network Provider DLL
+T1556.008	TA0006	Network Provider DLL
+T1556.008	TA0112	Network Provider DLL
+T1556.009	TA0003	Conditional Access Policies
+T1556.009	TA0006	Conditional Access Policies
+T1556.009	TA0112	Conditional Access Policies
+T1557	TA0006	Adversary-in-the-Middle
+T1557	TA0009	Adversary-in-the-Middle
+T1557.001	TA0006	Name Resolution Poisoning and SMB Relay
+T1557.001	TA0009	Name Resolution Poisoning and SMB Relay
+T1557.002	TA0006	ARP Cache Poisoning
+T1557.002	TA0009	ARP Cache Poisoning
+T1557.003	TA0006	DHCP Spoofing
+T1557.003	TA0009	DHCP Spoofing
+T1557.004	TA0006	Evil Twin
+T1557.004	TA0009	Evil Twin
+T1558	TA0006	Steal or Forge Kerberos Tickets
+T1558.001	TA0006	Golden Ticket
+T1558.002	TA0006	Silver Ticket
+T1558.003	TA0006	Kerberoasting
+T1558.004	TA0006	AS-REP Roasting
+T1558.005	TA0006	Ccache Files
+T1559	TA0002	Inter-Process Communication
+T1559.001	TA0002	Component Object Model
+T1559.002	TA0002	Dynamic Data Exchange
+T1559.003	TA0002	XPC Services
+T1560	TA0009	Archive Collected Data
+T1560.001	TA0009	Archive via Utility
+T1560.002	TA0009	Archive via Library
+T1560.003	TA0009	Archive via Custom Method
+T1561	TA0040	Disk Wipe
+T1561.001	TA0040	Disk Content Wipe
+T1561.002	TA0040	Disk Structure Wipe
+T1563	TA0008	Remote Service Session Hijacking
+T1563.001	TA0008	SSH Hijacking
+T1563.002	TA0008	RDP Hijacking
+T1564	TA0005	Hide Artifacts
+T1564.001	TA0005	Hidden Files and Directories
+T1564.002	TA0005	Hidden Users
+T1564.003	TA0005	Hidden Window
+T1564.004	TA0005	NTFS File Attributes
+T1564.005	TA0005	Hidden File System
+T1564.006	TA0005	Run Virtual Instance
+T1564.007	TA0005	VBA Stomping
+T1564.008	TA0005	Email Hiding Rules
+T1564.009	TA0005	Resource Forking
+T1564.010	TA0005	Process Argument Spoofing
+T1564.011	TA0005	Ignore Process Interrupts
+T1564.012	TA0005	File/Path Exclusions
+T1564.013	TA0005	Bind Mounts
+T1564.014	TA0005	Extended Attributes
+T1565	TA0040	Data Manipulation
+T1565.001	TA0040	Stored Data Manipulation
+T1565.002	TA0040	Transmitted Data Manipulation
+T1565.003	TA0040	Runtime Data Manipulation
+T1566	TA0001	Phishing
+T1566.001	TA0001	Spearphishing Attachment
+T1566.002	TA0001	Spearphishing Link
+T1566.003	TA0001	Spearphishing via Service
+T1566.004	TA0001	Spearphishing Voice
+T1567	TA0010	Exfiltration Over Web Service
+T1567.001	TA0010	Exfiltration to Code Repository
+T1567.002	TA0010	Exfiltration to Cloud Storage
+T1567.003	TA0010	Exfiltration to Text Storage Sites
+T1567.004	TA0010	Exfiltration Over Webhook
+T1568	TA0011	Dynamic Resolution
+T1568.001	TA0011	Fast Flux DNS
+T1568.002	TA0011	Domain Generation Algorithms
+T1568.003	TA0011	DNS Calculation
+T1569	TA0002	System Services
+T1569.001	TA0002	Launchctl
+T1569.002	TA0002	Service Execution
+T1569.003	TA0002	Systemctl
+T1570	TA0008	Lateral Tool Transfer
+T1571	TA0011	Non-Standard Port
+T1572	TA0011	Protocol Tunneling
+T1573	TA0011	Encrypted Channel
+T1573.001	TA0011	Symmetric Cryptography
+T1573.002	TA0011	Asymmetric Cryptography
+T1574	TA0002	Hijack Execution Flow
+T1574	TA0005	Hijack Execution Flow
+T1574.001	TA0002	DLL
+T1574.001	TA0005	DLL
+T1574.004	TA0002	Dylib Hijacking
+T1574.004	TA0005	Dylib Hijacking
+T1574.005	TA0002	Executable Installer File Permissions Weakness
+T1574.005	TA0005	Executable Installer File Permissions Weakness
+T1574.006	TA0002	Dynamic Linker Hijacking
+T1574.006	TA0005	Dynamic Linker Hijacking
+T1574.007	TA0002	Path Interception by PATH Environment Variable
+T1574.007	TA0005	Path Interception by PATH Environment Variable
+T1574.008	TA0002	Path Interception by Search Order Hijacking
+T1574.008	TA0005	Path Interception by Search Order Hijacking
+T1574.009	TA0002	Path Interception by Unquoted Path
+T1574.009	TA0005	Path Interception by Unquoted Path
+T1574.010	TA0002	Services File Permissions Weakness
+T1574.010	TA0005	Services File Permissions Weakness
+T1574.011	TA0002	Services Registry Permissions Weakness
+T1574.011	TA0005	Services Registry Permissions Weakness
+T1574.012	TA0002	COR_PROFILER
+T1574.012	TA0005	COR_PROFILER
+T1574.013	TA0002	KernelCallbackTable
+T1574.013	TA0005	KernelCallbackTable
+T1574.014	TA0002	AppDomainManager
+T1574.014	TA0005	AppDomainManager
+T1578	TA0112	Modify Cloud Compute Infrastructure
+T1578.001	TA0112	Create Snapshot
+T1578.002	TA0112	Create Cloud Instance
+T1578.003	TA0112	Delete Cloud Instance
+T1578.004	TA0112	Revert Cloud Instance
+T1578.005	TA0112	Modify Cloud Compute Configurations
+T1580	TA0007	Cloud Infrastructure Discovery
+T1583	TA0042	Acquire Infrastructure
+T1583.001	TA0042	Domains
+T1583.002	TA0042	DNS Server
+T1583.003	TA0042	Virtual Private Server
+T1583.004	TA0042	Server
+T1583.005	TA0042	Botnet
+T1583.006	TA0042	Web Services
+T1583.007	TA0042	Serverless
+T1583.008	TA0042	Malvertising
+T1584	TA0042	Compromise Infrastructure
+T1584.001	TA0042	Domains
+T1584.002	TA0042	DNS Server
+T1584.003	TA0042	Virtual Private Server
+T1584.004	TA0042	Server
+T1584.005	TA0042	Botnet
+T1584.006	TA0042	Web Services
+T1584.007	TA0042	Serverless
+T1584.008	TA0042	Network Devices
+T1585	TA0042	Establish Accounts
+T1585.001	TA0042	Social Media Accounts
+T1585.002	TA0042	Email Accounts
+T1585.003	TA0042	Cloud Accounts
+T1586	TA0042	Compromise Accounts
+T1586.001	TA0042	Social Media Accounts
+T1586.002	TA0042	Email Accounts
+T1586.003	TA0042	Cloud Accounts
+T1587	TA0042	Develop Capabilities
+T1587.001	TA0042	Malware
+T1587.002	TA0042	Code Signing Certificates
+T1587.003	TA0042	Digital Certificates
+T1587.004	TA0042	Exploits
+T1588	TA0042	Obtain Capabilities
+T1588.001	TA0042	Malware
+T1588.002	TA0042	Tool
+T1588.003	TA0042	Code Signing Certificates
+T1588.004	TA0042	Digital Certificates
+T1588.005	TA0042	Exploits
+T1588.006	TA0042	Vulnerabilities
+T1588.007	TA0042	Artificial Intelligence
+T1589	TA0043	Gather Victim Identity Information
+T1589.001	TA0043	Credentials
+T1589.002	TA0043	Email Addresses
+T1589.003	TA0043	Employee Names
+T1590	TA0043	Gather Victim Network Information
+T1590.001	TA0043	Domain Properties
+T1590.002	TA0043	DNS
+T1590.003	TA0043	Network Trust Dependencies
+T1590.004	TA0043	Network Topology
+T1590.005	TA0043	IP Addresses
+T1590.006	TA0043	Network Security Appliances
+T1591	TA0043	Gather Victim Org Information
+T1591.001	TA0043	Determine Physical Locations
+T1591.002	TA0043	Business Relationships
+T1591.003	TA0043	Identify Business Tempo
+T1591.004	TA0043	Identify Roles
+T1592	TA0043	Gather Victim Host Information
+T1592.001	TA0043	Hardware
+T1592.002	TA0043	Software
+T1592.003	TA0043	Firmware
+T1592.004	TA0043	Client Configurations
+T1593	TA0043	Search Open Websites/Domains
+T1593.001	TA0043	Social Media
+T1593.002	TA0043	Search Engines
+T1593.003	TA0043	Code Repositories
+T1594	TA0043	Search Victim-Owned Websites
+T1595	TA0043	Active Scanning
+T1595.001	TA0043	Scanning IP Blocks
+T1595.002	TA0043	Vulnerability Scanning
+T1595.003	TA0043	Wordlist Scanning
+T1596	TA0043	Search Open Technical Databases
+T1596.001	TA0043	DNS/Passive DNS
+T1596.002	TA0043	WHOIS
+T1596.003	TA0043	Digital Certificates
+T1596.004	TA0043	CDNs
+T1596.005	TA0043	Scan Databases
+T1597	TA0043	Search Closed Sources
+T1597.001	TA0043	Threat Intel Vendors
+T1597.002	TA0043	Purchase Technical Data
+T1598	TA0043	Phishing for Information
+T1598.001	TA0043	Spearphishing Service
+T1598.002	TA0043	Spearphishing Attachment
+T1598.003	TA0043	Spearphishing Link
+T1598.004	TA0043	Spearphishing Voice
+T1599	TA0112	Network Boundary Bridging
+T1599.001	TA0112	Network Address Translation Traversal
+T1600	TA0112	Weaken Encryption
+T1600.001	TA0112	Reduce Key Space
+T1600.002	TA0112	Disable Crypto Hardware
+T1601	TA0112	Modify System Image
+T1601.001	TA0112	Patch System Image
+T1601.002	TA0112	Downgrade System Image
+T1602	TA0009	Data from Configuration Repository
+T1602.001	TA0009	SNMP (MIB Dump)
+T1602.002	TA0009	Network Device Configuration Dump
+T1606	TA0006	Forge Web Credentials
+T1606.001	TA0006	Web Cookies
+T1606.002	TA0006	SAML Tokens
+T1608	TA0042	Stage Capabilities
+T1608.001	TA0042	Upload Malware
+T1608.002	TA0042	Upload Tool
+T1608.003	TA0042	Install Digital Certificate
+T1608.004	TA0042	Drive-by Target
+T1608.005	TA0042	Link Target
+T1608.006	TA0042	SEO Poisoning
+T1608.007	TA0042	AI Result Poisoning
+T1609	TA0002	Container Administration Command
+T1610	TA0002	Deploy Container
+T1611	TA0004	Escape to Host
+T1612	TA0005	Build Image on Host
+T1613	TA0007	Container and Resource Discovery
+T1614	TA0007	System Location Discovery
+T1614.001	TA0007	System Language Discovery
+T1615	TA0007	Group Policy Discovery
+T1619	TA0007	Cloud Storage Object Discovery
+T1620	TA0005	Reflective Code Loading
+T1621	TA0006	Multi-Factor Authentication Request Generation
+T1622	TA0005	Debugger Evasion
+T1622	TA0007	Debugger Evasion
+T1647	TA0112	Plist File Modification
+T1648	TA0002	Serverless Execution
+T1649	TA0006	Steal or Forge Authentication Certificates
+T1650	TA0042	Acquire Access
+T1651	TA0002	Cloud Administration Command
+T1652	TA0007	Device Driver Discovery
+T1653	TA0003	Power Settings
+T1654	TA0007	Log Enumeration
+T1657	TA0040	Financial Theft
+T1659	TA0001	Content Injection
+T1659	TA0011	Content Injection
+T1665	TA0011	Hide Infrastructure
+T1666	TA0112	Modify Cloud Resource Hierarchy
+T1667	TA0040	Email Bombing
+T1668	TA0003	Exclusive Control
+T1669	TA0001	Wi-Fi Networks
+T1671	TA0003	Cloud Application Integration
+T1673	TA0007	Virtual Machine Discovery
+T1674	TA0002	Input Injection
+T1675	TA0002	ESXi Administration Command
+T1677	TA0002	Poisoned Pipeline Execution
+T1678	TA0005	Delay Execution
+T1679	TA0005	Selective Exclusion
+T1680	TA0007	Local Storage Discovery
+T1681	TA0043	Search Threat Vendor Data
+T1682	TA0043	Query Public AI Services
+T1683	TA0042	Generate Content
+T1683.001	TA0042	Written Content
+T1683.002	TA0042	Audio-Visual Content
+T1684	TA0005	Social Engineering
+T1684.001	TA0005	Impersonation
+T1684.002	TA0005	Email Spoofing
+T1685	TA0112	Disable or Modify Tools
+T1685.001	TA0112	Disable or Modify Windows Event Log
+T1685.002	TA0112	Disable or Modify Cloud Log
+T1685.003	TA0112	Modify or Spoof Tool UI
+T1685.004	TA0112	Disable or Modify Linux Audit System Log
+T1685.005	TA0112	Clear Windows Event Logs
+T1685.006	TA0112	Clear Linux or Mac System Logs
+T1685.007	TA0112	Impair Autonomous Defenses
+T1686	TA0112	Disable or Modify System Firewall
+T1686.001	TA0112	Cloud Firewall
+T1686.002	TA0112	Network Device Firewall
+T1686.003	TA0112	Windows Host Firewall
+T1687	TA0112	Exploitation for Defense Impairment
+T1688	TA0112	Safe Mode Boot
+T1689	TA0112	Downgrade Attack
+T1690	TA0112	Prevent Command History Logging
+T1696	TA0005	Anti-Automation Evasion
+T1696.001	TA0005	Automate CAPTCHA Completion
+T1696.002	TA0005	Avoid CAPTCHA
+T1697	TA0006	Steal Application Specific Passwords
+T1698	TA0002	Indirect Prompt Injection
+T1699	TA0002	Direct Prompt Injection
+T1700	TA0010	AI-Enabled Exfiltration

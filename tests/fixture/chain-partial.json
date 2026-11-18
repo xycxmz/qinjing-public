@@ -1,0 +1,60 @@
+{
+  "fetch": {
+    "source": "fixture-adapter-v0",
+    "window_lo_ms": 1794818800000,
+    "window_hi_ms": 1794819020000,
+    "count": 2,
+    "complete": true
+  },
+  "alerts": [
+    {
+      "timestamp": "2026-11-16T08:50:01.500Z",
+      "event_kind": "alert",
+      "rule_id": "r-scan",
+      "rule_name": "nmap scan detected",
+      "severity": "high",
+      "signal_class": [
+        "net_scan_external"
+      ],
+      "host": {
+        "id": "h9",
+        "name": "selftest"
+      },
+      "process": {
+        "pid": 901,
+        "uid": 5100,
+        "argv": [
+          "nmap",
+          "-sT",
+          "203.0.113.10"
+        ]
+      },
+      "raw_log": "fixture",
+      "event_uid": "e1500"
+    },
+    {
+      "timestamp": "2026-11-16T08:50:05.500Z",
+      "event_kind": "alert",
+      "rule_id": "r-key",
+      "rule_name": "private key access",
+      "severity": "high",
+      "signal_class": [
+        "credential_file_read"
+      ],
+      "host": {
+        "id": "h9",
+        "name": "selftest"
+      },
+      "process": {
+        "pid": 905,
+        "uid": 5100,
+        "argv": [
+          "cat",
+          "/root/.ssh/id_rsa"
+        ]
+      },
+      "raw_log": "fixture",
+      "event_uid": "e5500"
+    }
+  ]
+}

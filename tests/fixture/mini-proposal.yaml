@@ -1,0 +1,30 @@
+# merge-gate fixture: one benign + one attack proposal case for mini.yaml.
+false_positives:
+  - id: M90
+    tactic: BENIGN
+    technique: NONE
+    name: count systemd units
+    platforms: [linux]
+    cmd: 'systemctl list-units --type=service --no-pager'
+    bin: systemctl
+    creates_process: true
+    mode: real
+    expected_signals: []
+    related_signals: []
+    expect: silent
+    impact: none
+
+attacks:
+  - id: M91
+    tactic: TA0005
+    technique: T1070.003
+    name: clear history via builtin
+    platforms: [linux]
+    cmd: 'history -c && unset HISTFILE'
+    bin: '-'
+    creates_process: false
+    mode: sim-builtin
+    expected_signals: [history_clear]
+    related_signals: []
+    expect: detectable
+    impact: none

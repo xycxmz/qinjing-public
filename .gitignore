@@ -1,0 +1,20 @@
+# python
+__pycache__/
+*.pyc
+
+# run artifacts (never a bare *.log: that swallows tests/fixture/exec.log)
+/tmp/
+/tmp_exec/
+benchmark-results/
+qinjing-results*.md
+
+# misc
+.DS_Store
+Thumbs.db
+
+# scratch
+.scratch_*
+
+# analysis scratch: keep audit-*.md evidence reports, ignore scripts/outputs
+.analysis/*.py
+.analysis/*.txt

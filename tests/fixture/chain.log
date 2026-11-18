@@ -1,0 +1,5 @@
+# QINJING start=1794819000000 host=selftest isolate=1 sleep=4 timeout=10 plan=3
+1794819001000	1794819002000	K1	attack	5100	1	0	nmap -sT 203.0.113.10
+1794819005000	1794819006000	K2	attack	5100	1	0	cat /root/.ssh/id_rsa
+1794819009000	1794819010000	K3	attack	5100	1	0	tar czf /tmp/qinjing-chain.tar.gz /etc/hostname
+# QINJING-END rows=3 transport_fail=0 rc=0

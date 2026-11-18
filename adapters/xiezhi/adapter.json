@@ -1,0 +1,10 @@
+{
+  "name": "xiezhi",
+  "command": ["python3", "{adapter_dir}/alerts_to_canonical.py", "{raw}", "{execlog}", "{out}"],
+  "mapping_table": "rule_map.json",
+  "policy": {
+    "unknown_severity": "reject",
+    "naive_timezone": "UTC",
+    "context_prefixes": ["firstseen/"]
+  }
+}

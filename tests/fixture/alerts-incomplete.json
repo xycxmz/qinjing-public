@@ -1,0 +1,25 @@
+{
+  "fetch": {
+    "source": "fixture-adapter-v0",
+    "window_lo_ms": 1794818010000,
+    "window_hi_ms": 1794818020000,
+    "count": 2,
+    "complete": false
+  },
+  "alerts": [
+    {
+      "timestamp": "2026-11-16T08:33:28.500Z",
+      "event_kind": "alert",
+      "rule_id": "r-nmap",
+      "severity": "critical",
+      "signal_class": ["net_scan_external"]
+    },
+    {
+      "timestamp": "2026-11-16T08:33:32.500Z",
+      "event_kind": "alert",
+      "rule_id": "r-shadow",
+      "severity": "high",
+      "signal_class": ["credential_file_read"]
+    }
+  ]
+}

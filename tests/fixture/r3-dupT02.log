@@ -1,0 +1,11 @@
+# QINJING start=1794818000000 host=selftest isolate=1 sleep=2 timeout=10 plan=8
+1794818001000	1794818002000	F01	fp	0	1	0	tar czf /tmp/qinjing-backup.tar.gz /etc/hosts
+1794818004000	1794818005000	F02	fp	0	1	0	ps aux
+1794818008000	1794818009000	T01	attack	3300	1	0	nmap -sT 203.0.113.10
+1794818012000	1794818013000	T02	attack	3301	1	0	cat /etc/shadow
+1794818012000	1794818013000	T02	attack	3301	1	0	cat /etc/shadow
+1794818016000	1794818017000	T03	attack	3302	1	0	history -c
+1794818020000	1794818021000	T04	attack	3303	0	127	debugfs -R cat /etc/shadow /dev/sda1
+1794818024000	1794818025000	G01	attack	3304	1	0	uname -a
+1794818028000	1794818029000	T05	attack	3305	0	1	echo '* * * * * /tmp/qinjing-beacon' >> /var/spool/cron/root
+# QINJING-END rows=9 transport_fail=0 rc=0

@@ -1,0 +1,54 @@
+# Batch E chain fixture (docs/05 D12): one shared-uid bucket, three steps,
+# three distinct signal classes. Timestamps in chain.log and the chain-*.json
+# alert packs are offsets of base ms 1794819000000 (= 2026-11-16T08:50:00Z):
+#   K1 +1000..+2000   K2 +5000..+6000   K3 +9000..+10000
+#   chain-agg.json      one +1500 alert carrying all three expected classes
+#                       (single-alert aggregation shape)
+#   chain-partial.json  +1500 and +5500 alerts; archive_staging never observed
+#   chain-zero.json     one +1500 alert with an unrelated signal class
+
+attacks:
+  - id: K1
+    tactic: TA0007
+    technique: T1046
+    name: chain step 1 port scan
+    platforms: [linux]
+    cmd: 'nmap -sT 203.0.113.10'
+    bin: nmap
+    creates_process: true
+    mode: real
+    expected_signals: [net_scan_external]
+    related_signals: []
+    bucket: chain-T
+    expect: detectable
+    impact: none
+
+  - id: K2
+    tactic: TA0006
+    technique: T1552.001
+    name: chain step 2 key material read
+    platforms: [linux]
+    cmd: 'cat /root/.ssh/id_rsa'
+    bin: cat
+    creates_process: true
+    mode: real
+    expected_signals: [credential_file_read]
+    related_signals: []
+    bucket: chain-T
+    expect: detectable
+    impact: none
+
+  - id: K3
+    tactic: TA0009
+    technique: T1074.001
+    name: chain step 3 staging archive
+    platforms: [linux]
+    cmd: 'tar czf /tmp/qinjing-chain.tar.gz /etc/hostname'
+    bin: tar
+    creates_process: true
+    mode: real
+    expected_signals: [archive_staging]
+    related_signals: []
+    bucket: chain-T
+    expect: detectable
+    impact: temporary

@@ -1,0 +1,28 @@
+# Secondary anchor registry: legitimate (signal_class, technique) pairs
+# beyond the headline example in docs/02 section 3. Curated by the anchor
+# lint round (mapping-notes section 17); add pairs only with a case or
+# product-mapping justification.
+# Columns: signal_class	technique_id	justification
+archive_staging	T1560.001	archive via utility form (A01 tar)
+setuid_discovery	T1548	parent technique citation (V02/V03)
+persistence_boot_script	T1547	parent technique citation (P03)
+account_creation	T1136.001	local-account sub-technique (P04/CB3)
+suspicious_interpreter_exec	T1059.006	python one-liner form (E03)
+suspicious_interpreter_exec	T1059.004	unix-shell form (E04/E06)
+persistence_pam	T1556	parent technique citation (P08)
+net_recon_local	T1592	gather-host-info family (R05/R06)
+credential_env_read	T1056	input-capture environ dump (C05)
+system_discovery	T1087.001	account discovery form (S05)
+system_discovery	T1005	data-from-local enumeration (A02)
+credential_file_read	T1552.004	private-key read (C02/CB2)
+cloud_cluster_recon	T1613	container/kube enum (S08/KC01)
+lateral_ssh_tunnel	T1090	deliberate legacy anchor (L02, mapping-notes 11)
+audit_log_tamper	T1685.006	clear-linux-logs form (D04, v18 successor)
+history_clear	T1690	prevent-logging form (ST01)
+exfil_transfer	T1132.001	encode-before-exfil (X04)
+net_scan_external	T1105	ingress transfer via nc (E08)
+indicator_removal	T1485	rm-form case keeps original technique (I03); rm has no T1485 external mapping, class headline stays T1070.004 (r2 proposal section 1.1)
+lateral_ssh_tunnel	T1021.004	remote-services ssh form via jump host (VR331; docs/11 T2, matrix TA0008)
+lateral_ssh_tunnel	T1570	lateral tool transfer form (VR330 scp / VR333 rsync; docs/11 T2, matrix TA0008)
+valid_account_remote_login	T1021.004	remote-services ssh form (LT03; docs/02 section-3 external anchor Wazuh 5712 / Sigma T1078)
+exfil_transfer	T1570	scp staged-archive push (LT04; xiezhi seed exec-exfil-archive-remote face)

@@ -1,0 +1,4 @@
+[
+  {"ts": "2026-11-16T08:33:28.500Z", "severity": "high", "rule_id": "r-a", "argv": "cmd a", "id": "m1", "agent_id": "A1", "hostname": "host-a"},
+  {"ts": "2026-11-16T08:33:32.500Z", "severity": "high", "rule_id": "r-b", "argv": "cmd b", "id": "m2", "agent_id": "B2", "hostname": "host-b"}
+]

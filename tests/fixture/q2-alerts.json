@@ -1,0 +1,10 @@
+{
+  "fetch": {
+    "source": "fixture-adapter-v0",
+    "window_lo_ms": 1794817990000,
+    "window_hi_ms": 1794818010000,
+    "count": 0,
+    "complete": true
+  },
+  "alerts": []
+}

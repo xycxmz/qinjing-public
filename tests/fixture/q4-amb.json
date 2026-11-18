@@ -1,0 +1,22 @@
+{
+  "fetch": {
+    "source": "fixture-adapter-v0",
+    "window_lo_ms": 1794817800000,
+    "window_hi_ms": 1794818032500,
+    "count": 1,
+    "complete": true
+  },
+  "alerts": [
+    {
+      "timestamp": "2026-11-16T08:33:34.000Z",
+      "event_kind": "alert",
+      "rule_id": "r-mixed",
+      "rule_name": "one alert whose classes intersect two same-second cases",
+      "severity": "high",
+      "signal_class": ["net_scan_external", "credential_file_read"],
+      "host": {"id": "h1", "name": "selftest"},
+      "raw_log": "fixture overlap",
+      "event_uid": "q4amb"
+    }
+  ]
+}

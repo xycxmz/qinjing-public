@@ -1,0 +1,4 @@
+# QINJING start=1794818000000 host=selftest isolate=1 sleep=2 timeout=10 plan=2
+1794818001000	1794818002000	F01	fp	0	1	0	tar czf /tmp/qinjing-backup.tar.gz /etc/hosts
+1794818008000	1794818009000	T01	attack	3300	1	0	nmap -sT 203.0.113.10
+# QINJING-END rows=2 transport_fail=0 rc=0

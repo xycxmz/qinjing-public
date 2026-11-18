@@ -1,0 +1,55 @@
+# Vocabulary-to-ATT&CK anchor table (governance rounds v0.2/v0.3
+# + r2 vocab expansion; was docs/02 section 3). One row per signal
+# class: anchor technique ids for L2/L3 in tools/anchor_lint.py.
+account_creation	T1136
+account_discovery	T1033
+archive_staging	T1074.001
+at_job_persistence	T1053.002
+audit_log_tamper	T1685.004
+c2_socket_script	T1095
+capability_abuse_grant	T1548.001
+cloud_cluster_recon	T1526
+cloud_metadata_access	T1552.005
+container_escape	T1611
+credential_dump_shadow	T1003.008
+credential_env_read	T1552.004
+credential_file_read	T1552.001
+cryptomining	T1496
+data_destruction	T1485
+db_mass_dump	T1005
+defense_service_stop	T1685.007
+disk_wipe	T1561.001
+dns_tunneling	T1071.004
+download_and_execute	T1059.004
+ebpf_load	T1547.006
+exfil_transfer	T1041 T1048
+file_attr_lock	T1222.002
+fileless_execution	T1620
+git_hook_persistence	T1546
+history_clear	T1070.003
+indicator_removal	T1070.004
+k8s_pod_exec	T1609
+kernel_module_load	T1547.006
+lateral_ssh_tunnel	T1572
+linker_hijack	T1574.006
+net_recon_local	T1049 T1018
+net_scan_external	T1046 T1595
+persistence_boot_script	T1037.004
+persistence_cron_write	T1053.003
+persistence_pam	T1556.003
+persistence_ssh_key	T1098.004
+persistence_systemd	T1543.002
+reverse_shell	T1059.004
+root_cert_install	T1553.004
+setuid_discovery	T1548.001
+shell_config_persistence	T1546.004
+sniffer_run	T1040
+sudoers_change	T1548.003
+suspicious_interpreter_exec	T1059
+system_discovery	T1082 T1083
+systemd_timer_persistence	T1053.006
+timestomp	T1070.006
+tor_connection	T1090.003
+tunnel_tool_use	T1071.001
+valid_account_remote_login	T1078
+webshell_write	T1505.003

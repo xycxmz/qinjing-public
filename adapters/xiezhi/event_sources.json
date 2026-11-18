@@ -1,0 +1,6 @@
+{
+  "module-load-init": "module_load",
+  "bpf-load-any": "bpf_load",
+  "conn-tor-ports": "connect",
+  "dns-tunnel-long-label": "dns_query"
+}

@@ -1,0 +1,26 @@
+cff-version: 1.2.0
+message: "If you use qinjing in your work, please cite it as below."
+title: qinjing
+authors:
+  - name: xycxmz
+type: dataset
+version: 2026.11
+date-released: "2026-11-18"
+license: Apache-2.0
+repository-code: "https://github.com/xycxmz/qinjing-public"
+abstract: >-
+  A live-executable benchmark suite for host intrusion detection (HIDS)
+  capability. It ships 1075 cases (120 benign false-positive probes and
+  955 attack cases mapped to MITRE ATT&CK), a runner that executes each
+  case under throwaway uids with per-case session isolation, an
+  alert-attribution scorer, a tight-window false-positive checker, and a
+  197-assertion selftest. Any HIDS that can export alerts as JSON can be
+  graded against the same corpus.
+keywords:
+  - hids
+  - intrusion-detection
+  - benchmark
+  - attack-simulation
+  - threat-detection
+  - mitre-att&ck
+  - detection-engineering

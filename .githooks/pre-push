@@ -1,0 +1,5 @@
+#!/bin/bash
+# Local CI hook (owner decision: no GitHub Actions). Runs the full gate
+# before anything leaves the machine. Install once per clone:
+#   git config core.hooksPath .githooks
+exec "$(git rev-parse --show-toplevel)/tools/gate.sh"

@@ -1,0 +1,43 @@
+{
+  "fetch": {
+    "source": "fixture-adapter-v0",
+    "window_lo_ms": 1794817800000,
+    "window_hi_ms": 1794818032500,
+    "count": 2,
+    "complete": true
+  },
+  "alerts": [
+    {
+      "timestamp": "2026-11-16T08:33:44.800Z",
+      "event_kind": "alert",
+      "rule_id": "r-hist-mk",
+      "rule_name": "history clear via marker",
+      "severity": "high",
+      "signal_class": [
+        "history_clear"
+      ],
+      "raw_log": "history -c # qj:T03:1794818000000",
+      "event_uid": "m1",
+      "host": {
+        "id": "h1",
+        "name": "selftest"
+      }
+    },
+    {
+      "timestamp": "2026-11-16T08:33:32.500Z",
+      "event_kind": "alert",
+      "rule_id": "r-shadow-wrongtag",
+      "rule_name": "shadow read carrying a stale run tag",
+      "severity": "high",
+      "signal_class": [
+        "credential_file_read"
+      ],
+      "raw_log": "cat /etc/shadow # qj:T02:999999999999",
+      "event_uid": "m2",
+      "host": {
+        "id": "h1",
+        "name": "selftest"
+      }
+    }
+  ]
+}
