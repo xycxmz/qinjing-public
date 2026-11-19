@@ -1,8 +1,8 @@
 {
   "benchmark": "qinjing",
-  "frozen_at": "2026-11-18T22:00:00+08:00",
+  "frozen_at": "2026-11-19T17:57:05+08:00",
   "corpus": {
-    "sha256": "b96afcd3b81b7c71991a06d07e79ee6df439595c0e852b6c1b6eb5430a4dd6a3",
+    "sha256": "6688605d2afa9d321b4fc28937218f052fc4b89167b0c6c1ff9e7e2e8235df8e",
     "cases": 1075,
     "fp": 120,
     "attack": 955,
@@ -14,7 +14,7 @@
     "source": "mitre-attack/attack-stix-data tag v20.1 (MITRE custom license, see NOTICE)"
   },
   "scorer": {
-    "sha256": "062fe367d71d93b598ad19762671fb7ca3cf0b0d97812c55e543d290767437a9",
+    "sha256": "713a92497ec1b643dee8d3cf29b0f488c5d468fd296b5544862803b1430c4032",
     "calibre": "v2.2"
   },
   "adapter": {

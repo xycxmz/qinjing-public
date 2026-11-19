@@ -72,6 +72,11 @@ python tools/family_check.py
 python tools/attack_coverage.py corpus/qinjing.yaml --strict
 ```
 
+`tools/gate.sh` wraps these in three Python steps plus a fourth that
+builds, vets, and tests the Go dashboard. Step 4 needs Go 1.26 or newer;
+without a Go toolchain it skips loudly, and the dashboard data is still
+gated by the selftest in step 3.
+
 ## 中文说明
 
 贡献以用例为主。提案是语料同形的 YAML 块，放在分支的 `proposals/` 下，走

@@ -1,5 +1,33 @@
 # Changelog
 
+## 2026.11.1 (2026-11-20)
+
+Coverage dashboard and corpus dedup rework. Case count, class count, and
+the evaluability disclosure are unchanged (1075 cases / 52 classes /
+14 effectively evaluable classes); the corpus sha256 changed with the
+rework (6688605d…).
+
+### Added
+- `dashboard/`: self-contained Go SSR MPA (coverage, tactic, technique,
+  class, and provisioning pages plus a scores placeholder pending
+  real-machine runs). `runs[]` ships empty; no synthetic numbers.
+- `tools/gen_dashboard_data.py`: deterministic aggregation into
+  `dashboard/dashboard_data.json`, schema-gated and byte-identical on
+  rerun.
+- `tools/dedup.py`: normalized near-duplicate audit caliber (placeholder
+  collapse, quoted-string skeleton, intra-class Jaccard) now wired into
+  the variant generators.
+- `scorer --out-json`: machine-readable report, reconciled by the
+  selftest.
+- `tools/gate.sh` step 4: Go build, vet, and test for the dashboard
+  (loudly skipped without a Go 1.26+ toolchain).
+
+### Changed
+- T4 corpus rework: 14 cases reshaped to remove exact-command and
+  near-duplicate clusters (timestomp five-case set heterogeneous; seven
+  generated exact-duplicate groups cleared). Selftest cleanup literal
+  count 85 to 87.
+
 ## 2026.11 (2026-11-18)
 
 Initial corpus release with 1075 cases (120 benign + 955 attack).

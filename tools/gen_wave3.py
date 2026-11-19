@@ -8,13 +8,17 @@ Every entry must differ from existing corpus cmds at the verb level or
 the target-family level, never as a pure parameter swap. Output is
 interleaved round-robin across classes so same-class cases are never
 adjacent in execution order. Independent from gen_variants.py (wave 1)
-and gen_wave2.py (wave 2).
+and gen_wave2.py (wave 2). Dedup shares the T4 dedup gate
+(tools/dedup.py): exact cmd, normalized skeleton, and intra-class
+Jaccard cap 0.8 (audit caliber). The run report ends with per-class
+distinct-skeleton / case counts for the batch.
 
 Usage: gen_wave3.py corpus/qinjing.yaml --output proposals/wave3-r1.yaml
 """
 import argparse, os, re, sys
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 from parse import parse_corpus, cmd_hygiene_errors
+from dedup import NearDupGate, skeleton_report
 
 # (tactic, technique, [(cmd, impact, mode, bin[, cleanup]), ...])
 W3 = {
@@ -193,17 +197,19 @@ def main():
     ap.add_argument("--output", required=True)
     args = ap.parse_args()
     cases = parse_corpus(args.corpus)
-    existing = set()
-    for sec in ("false_positives", "attacks"):
-        for c in cases[sec]:
-            existing.add(c.get("cmd", ""))
+    existing_cases = [c for sec in ("false_positives", "attacks")
+                      for c in cases[sec]]
+    existing = {c.get("cmd", "") for c in existing_cases}
+    gate = NearDupGate(existing_cases)
     seq = 0
     for c in cases["attacks"]:
         m = re.match(r"VR(\d+)", c.get("id", ""))
         if m:
             seq = max(seq, int(m.group(1)))
     per_class = {}
+    batch_cmds = {}
     dupes = 0
+    near_rej = 0
     hygiene_rej = 0
     for cls in W3_ORDER:
         tactic, technique, entries = W3[cls]
@@ -216,11 +222,19 @@ def main():
                 dupes += 1
                 print("DUPLICATE [%s]: %s" % (cls, cmd[:60]))
                 continue
+            near = gate.check(cmd, cls)
+            if near:
+                near_rej += 1
+                print("NEAR-DUP REJECT [%s]: %s -> %s"
+                      % (cls, cmd[:60], near))
+                continue
             probs = cmd_hygiene_errors(cmd, impact)
             if probs:
                 hygiene_rej += 1
                 print("REJECT [%s]: %s -> %s" % (cls, cmd[:60], probs[0]))
                 continue
+            gate.accept(cmd, cls)
+            batch_cmds.setdefault(cls, []).append(cmd)
             seq += 1
             n += 1
             bucket.append((seq, cls, tactic, technique, cmd, impact, mode,
@@ -256,8 +270,12 @@ def main():
             lines.append("    cleanup: %s" % cleanup)
     with open(args.output, "w", encoding="ascii", newline="\n") as fh:
         fh.write("\n".join(lines) + "\n")
-    print("generated %d (%d dupes, %d hygiene rejects) -> %s"
-          % (total, dupes, hygiene_rej, args.output))
+    print("generated %d (%d exact dupes, %d near-dup rejects, %d hygiene"
+          " rejects) -> %s" % (total, dupes, near_rej, hygiene_rej,
+                               args.output))
+    print("per-class skeleton diversity (batch):")
+    for line in skeleton_report(batch_cmds):
+        print("  " + line)
 
 
 if __name__ == "__main__":

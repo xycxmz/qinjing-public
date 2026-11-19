@@ -1,0 +1,25 @@
+{{template "header" .}}
+{{$d := .Data}}
+{{$max := maxClassCases $d.ClassDistribution}}
+<p class="muted">Case distribution across the {{$d.Totals.Classes}} signal classes. Every case in a class is
+  <em>detectable</em> (expected to fire a signal). The {{$d.Totals.AttackNoClass}} <em>gap</em> cases are expected
+  blind spots with no signal class, so they sit outside this table:
+  {{len $d.ClassDistribution}} classes hold {{$d.Totals.AttackExpect.detectable}} cases, plus
+  {{$d.Totals.AttackNoClass}} no-class = {{$d.Totals.Attack}} attack cases.</p>
+<section class="panel">
+  <table class="grid">
+    <thead><tr><th>Signal class</th><th class="num">Cases</th><th class="barcol">Distribution</th><th class="num">Detectable</th><th class="num">Gap</th></tr></thead>
+    <tbody>
+    {{range $d.ClassDistribution}}
+      <tr>
+        <td><code>{{.Class}}</code></td>
+        <td class="num">{{.Cases}}</td>
+        <td class="barcol"><div class="bar"><div class="bar-fill" style="width:{{pct .Cases $max}}%"></div></div></td>
+        <td class="num">{{.Detectable}}</td>
+        <td class="num">{{.Gap}}</td>
+      </tr>
+    {{end}}
+    </tbody>
+  </table>
+</section>
+{{template "footer" .}}

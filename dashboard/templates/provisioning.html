@@ -1,0 +1,38 @@
+{{template "header" .}}
+{{$d := .Data}}
+<p class="muted">What the minimal reference bench can evaluate. A class is <em>evaluable</em> when every case's
+  binary ships with the reference image (the same criterion the runner probes with <code>command -v</code>).
+  <em>Service-dependent</em> classes additionally need a reachable remote peer and are counted apart from the
+  binary criterion.</p>
+
+<section class="cards">
+  <div class="card"><div class="card-num">{{$d.Provisioning.CorpusClasses}}</div><div class="card-label">corpus-level classes</div></div>
+  <div class="card"><div class="card-num">{{$d.Provisioning.EvaluableRef}}</div><div class="card-label">evaluable on reference bench</div></div>
+  <div class="card"><div class="card-num">{{$d.Provisioning.ServiceDep}}</div><div class="card-label">service-dependent</div></div>
+  <div class="card"><div class="card-num">{{len $d.Provisioning.SimOnlyClasses}}</div><div class="card-label">sim-only classes</div></div>
+</section>
+
+<section class="panel">
+  <h2>Sim-only classes</h2>
+  <p class="muted">Every case simulates a missing binary, so these are never evaluable on a bare reference bench:</p>
+  <p>{{range $d.Provisioning.SimOnlyClasses}}<code class="chip">{{.}}</code> {{end}}</p>
+</section>
+
+<section class="panel">
+  <h2>Per-class provisioning</h2>
+  <table class="grid">
+    <thead><tr><th>Class</th><th class="num">Cases</th><th>Evaluable</th><th>Service-dep</th><th>Sim-only</th></tr></thead>
+    <tbody>
+    {{range $d.Provisioning.Rows}}
+      <tr>
+        <td><code>{{.Class}}</code></td>
+        <td class="num">{{.Cases}}</td>
+        <td>{{if .Evaluable}}<span class="tag yes">yes</span>{{else}}<span class="tag no">no</span>{{end}}</td>
+        <td>{{if .ServiceDep}}<span class="tag warn">yes</span>{{else}}<span class="tag">no</span>{{end}}</td>
+        <td>{{if .SimOnly}}<span class="tag warn">yes</span>{{else}}<span class="tag">no</span>{{end}}</td>
+      </tr>
+    {{end}}
+    </tbody>
+  </table>
+</section>
+{{template "footer" .}}

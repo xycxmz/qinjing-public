@@ -9,10 +9,13 @@ Usage:
 
 Reads the existing corpus, generates new cases from the shape table below,
 runs hygiene lint on each command, and writes a proposal YAML for the
-merge gate. Shapes already present in the corpus (by exact cmd match) are
-skipped; --count-per-class caps the output per class (default 25).
+merge gate. Shapes already present in the corpus are skipped by exact cmd
+match and by the T4 near-dup gate (tools/dedup.py: normalized
+skeleton dedup plus intra-class Jaccard cap 0.8, audit caliber);
+--count-per-class caps the output per class (default 25).
 --interleave round-robins across classes in the output file so same-class
-cases are not adjacent (execution order is file order).
+cases are not adjacent (execution order is file order). The run report
+ends with per-class distinct-skeleton / case counts for the batch.
 """
 
 import argparse
@@ -21,6 +24,7 @@ import sys
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 from parse import parse_corpus, cmd_hygiene_errors  # noqa: E402
+from dedup import NearDupGate, skeleton_report  # noqa: E402
 
 # Shape table: (cmd, impact, mode, bin). Each shape is a complete,
 # self-contained command. The class's tactic/technique/expect are fixed
@@ -1133,10 +1137,10 @@ def yaml_escape(text):
 def generate(corpus_path, output_path, count_per_class, only_classes=None,
              interleave=False):
     cases = parse_corpus(corpus_path)
-    existing_cmds = set()
-    for section in ("false_positives", "attacks"):
-        for case in cases[section]:
-            existing_cmds.add(case.get("cmd", ""))
+    existing = [c for section in ("false_positives", "attacks")
+                for c in cases[section]]
+    existing_cmds = {c.get("cmd", "") for c in existing}
+    gate = NearDupGate(existing)
 
     classes = only_classes or CLASS_ORDER
     # Continue VR numbering after the highest existing variant ID.
@@ -1148,7 +1152,9 @@ def generate(corpus_path, output_path, count_per_class, only_classes=None,
             if m:
                 seq = max(seq, int(m.group(1)))
     per_class = {}
+    batch_cmds = {}
     skipped_dupe = 0
+    skipped_near = 0
     skipped_hygiene = 0
 
     for class_name in classes:
@@ -1166,11 +1172,19 @@ def generate(corpus_path, output_path, count_per_class, only_classes=None,
             if cmd in existing_cmds:
                 skipped_dupe += 1
                 continue
+            near = gate.check(cmd, class_name)
+            if near:
+                skipped_near += 1
+                print("NEAR-DUP REJECT [%s]: %s -> %s"
+                      % (class_name, cmd[:50], near))
+                continue
             problems = cmd_hygiene_errors(cmd, impact)
             if problems:
                 skipped_hygiene += 1
                 print("HYGIENE REJECT [%s]: %s -> %s" % (class_name, cmd[:50], problems[0]))
                 continue
+            gate.accept(cmd, class_name)
+            batch_cmds.setdefault(class_name, []).append(cmd)
             seq += 1
             count += 1
             bucket.append({
@@ -1218,9 +1232,13 @@ def generate(corpus_path, output_path, count_per_class, only_classes=None,
 
     with open(output_path, "w", encoding="ascii", newline="\n") as fh:
         fh.write(text)
-    print("generated %d cases (%d skipped as duplicates, %d failed hygiene)"
-          % (len(ordered), skipped_dupe, skipped_hygiene))
+    print("generated %d cases (%d skipped as exact duplicates, %d near-dup"
+          " rejects, %d failed hygiene)"
+          % (len(ordered), skipped_dupe, skipped_near, skipped_hygiene))
     print("wrote %s" % output_path)
+    print("per-class skeleton diversity (batch):")
+    for line in skeleton_report(batch_cmds):
+        print("  " + line)
     return 0
 
 

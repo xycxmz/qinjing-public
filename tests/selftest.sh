@@ -111,6 +111,53 @@ check "sim-builtin counts despite bin=0" \
   "$(cat "$TMP/t05check.out")" "t05-hit"
 check_grep "stray reason listed" "outside run window (pre-existing noise)" "$REPORT"
 
+echo "== scorer: --out-json machine-readable report (dashboard U1) =="
+JSONREP="$TMP/report.json"
+python3 "$ROOT/tools/scorer.py" "$FIX/mini.yaml" "$FIX/exec.log" \
+  "$FIX/alerts-complete.json" --out-json "$JSONREP" >"$TMP/json.out" 2>"$TMP/json.err"
+check "scorer --out-json exits 0" "$?" "0"
+check_grep "--out-json names the written file" "wrote " "$TMP/json.out"
+python3 - "$JSONREP" "$FIX/mini.yaml" >"$TMP/jsoncheck.out" 2>&1 <<'PYEOF'
+import hashlib
+import json
+import sys
+
+data = json.load(open(sys.argv[1], encoding="utf-8"))
+csha = hashlib.sha256(open(sys.argv[2], "rb").read()).hexdigest()
+bad = []
+m = data["meta"]
+if m["corpus_sha256"] != csha:
+    bad.append("corpus_sha256 mismatch")
+if m["calibre"] != "v2.2" or m["run_kind"] != "COMPLETE":
+    bad.append("meta calibre/run_kind")
+if data["totals"] != {"cases": 8, "fp": 2, "attack": 6}:
+    bad.append("totals %s" % data["totals"])
+d = data["detection"]
+if (d["detectable"], d["hit"], d["strict"], d["anyhit"], d["notrun"]) != (4, 3, 2, 3, 1):
+    bad.append("detection counts %s" % d)
+if (d["signal_rate"], d["strict_rate"], d["anyhit_rate"]) != (0.75, 0.5, 0.75):
+    bad.append("detection rates")
+f = data["fp"]
+if (f["verified"], f["attempt"], f["legacy"], f["violations"]) != (0, 0, 2, 1):
+    bad.append("fp tiers %s" % f)
+if f["attempt_rate"] != 0.5 or f["verified_rate"] is not None:
+    bad.append("fp rates")
+for row in data["per_class"]:
+    if row["cases"] != row["detected"] + row["missed"]:
+        bad.append("per_class equation %s" % row["class"])
+by_class = {r["class"]: r for r in data["per_class"]}
+nse = by_class.get("net_scan_external", {})
+if (nse.get("detected"), nse.get("median_latency_ms"), nse.get("tech_tagged")) != (1, 500, 1):
+    bad.append("net_scan_external row %s" % nse)
+if by_class.get("net_recon_local", {}).get("detected") != 0:
+    bad.append("net_recon_local must be undetected")
+if not data.get("by_tactic") or not data.get("by_technique"):
+    bad.append("by_tactic/by_technique empty")
+print("json-ok" if not bad else "json-broken: " + "; ".join(bad))
+PYEOF
+check "--out-json reconciles with the markdown report" \
+  "$(cat "$TMP/jsoncheck.out")" "json-ok"
+
 echo "== scorer: incomplete fetch must refuse =="
 python3 "$ROOT/tools/scorer.py" "$FIX/mini.yaml" "$FIX/exec.log" \
   "$FIX/alerts-incomplete.json" >"$TMP/inc.out" 2>"$TMP/inc.err"
@@ -527,9 +574,12 @@ check "exact-group match enforced (a third case on a registered cmd fails)" \
   "third-case-breaks-registration"
 
 echo "== D11: cleanup fields drive the sweep =="
+# 87 = 85 migrated + VR549/VR550: the T4 dedup reshapes turned those two
+# deletes into artifact-producing forms (dd overwrite, shred -n 1), so each
+# gained the rm -f cleanup its data_destruction siblings already carry.
 check "cleanup export lists the migrated cases" \
   "$("$ROOT/tools/parse.py" --cleanup "$ROOT/corpus/qinjing.yaml" | wc -l | tr -d ' ')" \
-  "85"
+  "87"
 check_grep "FP09 carries its artifact cleanup" \
   "cleanup: rm -f /tmp/qinjing-backup.tar.gz" "$ROOT/corpus/qinjing.yaml"
 check_grep "L04 cleans both key artifacts in one rm" \
@@ -875,6 +925,72 @@ check_grep "sim-only tsv row carries flag and install gap" \
 check_grep "evaluable tsv row shows zero gap" \
   "$(printf 'sudoers_change\t16\tchmod,install,sed,sudo,tee,visudo\t0\tno\tyes\tno\t-')" \
   "$ROOT/data/provisioning.tsv"
+
+echo "== dashboard data generator =="
+DD="$TMP/dashboard_data.json"
+python3 "$ROOT/tools/gen_dashboard_data.py" --out "$DD" >"$TMP/dd.out" 2>&1
+check "dashboard data generator exit code" "$?" "0"
+check "committed dashboard_data.json is byte-identical to regeneration" \
+  "$(cmp -s "$ROOT/dashboard/dashboard_data.json" "$DD" && echo same)" "same"
+check_grep "generator discloses empty runs placeholder" \
+  "runs: 0 (phase-2 placeholder; no real-machine run yet)" "$TMP/dd.out"
+python3 - "$DD" "$ROOT" >"$TMP/ddcheck.out" 2>&1 <<'PYEOF'
+import hashlib
+import json
+import os
+import sys
+
+sys.path.insert(0, os.path.join(sys.argv[2], "tools"))
+import parse
+
+data = json.load(open(sys.argv[1], encoding="utf-8"))
+root = sys.argv[2]
+cases = parse.parse_corpus(os.path.join(root, "corpus", "qinjing.yaml"))
+csha = hashlib.sha256(open(os.path.join(root, "corpus", "qinjing.yaml"),
+                           "rb").read()).hexdigest()
+bad = []
+m, t, p = data["meta"], data["totals"], data["provisioning"]
+if m["corpus_sha256"] != csha:
+    bad.append("meta corpus_sha256 != corpus hash")
+if (m["version"], m["calibre"], m["attack_version"]) != ("2026.11", "v2.2", "20.1"):
+    bad.append("meta version/calibre/attack_version %s" % m)
+if (t["cases"], t["fp"], t["attack"], t["classes"]) != (1075, 120, 955, 52):
+    bad.append("totals %s" % t)
+if t["cases"] != len(parse.all_cases(cases)) or t["fp"] != len(cases["false_positives"]):
+    bad.append("totals drift from parse")
+if t["impact"] != {"none": 580, "temporary": 160, "destructive": 335}:
+    bad.append("impact composition %s" % t["impact"])
+if t["attack_no_class"] != 20:
+    bad.append("attack_no_class %s" % t["attack_no_class"])
+cd = data["class_distribution"]
+if len(cd) != 52:
+    bad.append("class_distribution rows %d" % len(cd))
+for r in cd:
+    if r["cases"] != r["detectable"] + r["gap"]:
+        bad.append("class equation %s" % r["class"])
+if sum(r["cases"] for r in cd) + t["attack_no_class"] != t["attack"]:
+    bad.append("class + no-class != attack")
+if len(data["tactic_coverage"]) != 15:
+    bad.append("tactic_coverage rows %d" % len(data["tactic_coverage"]))
+hm = data["technique_heatmap"]
+if len(hm) != m["techniques_covered"] or len(hm) != 80:
+    bad.append("heatmap count %d" % len(hm))
+for r in hm:
+    if r["score"] < 1 or r["detectable"] + r["gap"] != r["score"]:
+        bad.append("heatmap row %s" % r["techniqueID"])
+nl = data["navigator_layer"]
+if (nl["domain"], nl["versions"]["attack"], len(nl["techniques"])) != ("enterprise-attack", "20.1", 80):
+    bad.append("navigator_layer shape")
+if (p["corpus_classes"], p["evaluable_ref"], p["service_dep"]) != (52, 14, 21):
+    bad.append("provisioning numbers %s" % p)
+if len(p["sim_only_classes"]) != 5 or len(p["rows"]) != 52:
+    bad.append("provisioning sim_only/rows")
+if data["runs"] != []:
+    bad.append("runs must stay empty (no real-machine run yet)")
+print("dd-ok" if not bad else "dd-broken: " + "; ".join(bad))
+PYEOF
+check "dashboard data reconciles with corpus + coverage + provisioning" \
+  "$(cat "$TMP/ddcheck.out")" "dd-ok"
 
 echo ""
 if [ "$fails" -eq 0 ]; then

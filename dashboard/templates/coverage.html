@@ -1,0 +1,22 @@
+{{template "header" .}}
+{{$d := .Data}}
+<p class="muted">Attack cases per ATT&amp;CK tactic: how many of the tactic's matrix techniques the corpus
+  covers, and how many cases exercise them. A technique may belong to several tactics, so the covered
+  column sums to more than the {{$d.Meta.TechniquesCovered}} unique covered techniques.</p>
+<section class="panel">
+  <table class="grid">
+    <thead><tr><th>Tactic</th><th>Name</th><th class="num">Covered / total</th><th class="barcol">Coverage</th><th class="num">Cases</th></tr></thead>
+    <tbody>
+    {{range $d.TacticCoverage}}
+      <tr>
+        <td><code>{{.Tactic}}</code></td>
+        <td>{{.Name}}</td>
+        <td class="num">{{.Covered}} / {{.MatrixTotal}}</td>
+        <td class="barcol"><div class="bar"><div class="bar-fill" style="width:{{pct .Covered .MatrixTotal}}%"></div></div></td>
+        <td class="num">{{.Cases}}</td>
+      </tr>
+    {{end}}
+    </tbody>
+  </table>
+</section>
+{{template "footer" .}}

@@ -3,12 +3,16 @@
 """Standalone wave-2 variant generator. Reads the corpus, generates new
 cases from the wave-2 shape table below, runs hygiene, outputs a proposal
 YAML. Independent from gen_variants.py (which holds wave-1 shapes).
+Dedup shares the T4 dedup gate (tools/dedup.py): exact cmd, normalized
+skeleton, and intra-class Jaccard cap 0.8 (audit caliber). The run report
+ends with per-class distinct-skeleton / case counts for the batch.
 
 Usage: gen_wave2.py corpus/qinjing.yaml --output proposals/wave2.yaml
 """
 import argparse, os, re, sys
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 from parse import parse_corpus, cmd_hygiene_errors
+from dedup import NearDupGate, skeleton_report
 
 W2 = {
  "credential_file_read": ("TA0006","T1552.001",[
@@ -175,25 +179,33 @@ def main():
     ap.add_argument("--output", required=True)
     args = ap.parse_args()
     cases = parse_corpus(args.corpus)
-    existing = set()
-    for sec in ("false_positives","attacks"):
-        for c in cases[sec]:
-            existing.add(c.get("cmd",""))
+    existing_cases = [c for sec in ("false_positives","attacks")
+                      for c in cases[sec]]
+    existing = {c.get("cmd","") for c in existing_cases}
+    gate = NearDupGate(existing_cases)
     seq = 0
     for c in cases["attacks"]:
         m = re.match(r"VR(\d+)", c.get("id",""))
         if m: seq = max(seq, int(m.group(1)))
     out = []
-    dupes = 0; hygiene_rej = 0
+    batch_cmds = {}
+    dupes = 0; near_rej = 0; hygiene_rej = 0
     for cls, (tactic, technique, entries) in W2.items():
         for cmd, impact, mode, bin_name in entries:
             if cmd in existing:
                 dupes += 1; continue
+            near = gate.check(cmd, cls)
+            if near:
+                near_rej += 1
+                print("NEAR-DUP REJECT [%s]: %s -> %s" % (cls, cmd[:50], near))
+                continue
             probs = cmd_hygiene_errors(cmd, impact)
             if probs:
                 hygiene_rej += 1
                 print("REJECT [%s]: %s -> %s" % (cls, cmd[:50], probs[0]))
                 continue
+            gate.accept(cmd, cls)
+            batch_cmds.setdefault(cls, []).append(cmd)
             seq += 1
             out.append((seq, cls, tactic, technique, cmd, impact, mode, bin_name))
     lines = ["# Wave-2 variants (tools/gen_wave2.py)", ""]
@@ -214,7 +226,11 @@ def main():
         lines.append("    impact: %s" % imp)
     with open(args.output, "w", encoding="ascii", newline="\n") as fh:
         fh.write("\n".join(lines) + "\n")
-    print("generated %d (%d dupes, %d hygiene rejects) -> %s" % (len(out), dupes, hygiene_rej, args.output))
+    print("generated %d (%d exact dupes, %d near-dup rejects, %d hygiene rejects) -> %s"
+          % (len(out), dupes, near_rej, hygiene_rej, args.output))
+    print("per-class skeleton diversity (batch):")
+    for line in skeleton_report(batch_cmds):
+        print("  " + line)
 
 if __name__ == "__main__":
     sys.exit(main())

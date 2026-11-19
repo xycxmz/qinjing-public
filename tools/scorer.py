@@ -244,7 +244,7 @@ def load_alerts(path, run_start_ms, run_end_ms):
 
 
 def build_report(corpus_path, log_path, alerts_path, min_severity,
-                 grace_ms, allow_no_host=False, verbose=False):
+                 grace_ms, allow_no_host=False, verbose=False, json_out=None):
     cases = parse_corpus(corpus_path)
     by_id = {}
     for group in ("false_positives", "attacks"):
@@ -429,6 +429,22 @@ def build_report(corpus_path, log_path, alerts_path, min_severity,
 
     out = []
     w = out.append
+    if json_out is not None:
+        json_out["meta"] = {
+            "corpus_sha256": file_sha256(corpus_path),
+            "calibre": "v2.2",
+            "min_severity": min_severity,
+            "grace_ms": grace_ms,
+            "run_kind": run_class["kind"],
+            "host": header.get("host", "?"),
+            "target_kernel": header.get("kernel", "?"),
+            "target_distro": header.get("distro", "?"),
+        }
+        json_out["totals"] = {
+            "cases": len(cases["false_positives"]) + len(cases["attacks"]),
+            "fp": len(cases["false_positives"]),
+            "attack": len(cases["attacks"]),
+        }
     w("# qinjing benchmark report")
     w("")
     w("- corpus: `%s`" % corpus_path)
@@ -655,6 +671,26 @@ def build_report(corpus_path, log_path, alerts_path, min_severity,
         fp_viol_verified = [r for r in fp_verified
                              if verdicts[r["id"]] == "FALSE POSITIVE"]
 
+        if json_out is not None:
+            json_out["detection"] = {
+                "detectable": len(det), "hit": len(det_hit),
+                "strict": len(det_strict), "anyhit": len(det_any),
+                "notrun": notrun, "transport_invalid": transport_rows,
+                "signal_rate": (len(det_hit) / len(det)) if det else None,
+                "strict_rate": (len(det_strict) / len(det)) if det else None,
+                "anyhit_rate": (len(det_any) / len(det)) if det else None,
+            }
+            json_out["fp"] = {
+                "evaluable": len(fp_evaluable), "verified": len(fp_verified),
+                "attempt": len(fp_attempt), "legacy": len(fp_legacy),
+                "violations": len(fp_viol),
+                "violations_verified": len(fp_viol_verified),
+                "verified_rate": (len(fp_viol_verified) / len(fp_verified))
+                                 if fp_verified else None,
+                "attempt_rate": (len(fp_viol) / len(fp_evaluable))
+                                if fp_evaluable else None,
+            }
+
         w("")
         w("## Statistics")
         w("")
@@ -743,6 +779,19 @@ def build_report(corpus_path, log_path, alerts_path, min_severity,
                  med_lat if med_lat is not None else "-",
                  tagged_pct))
 
+        if json_out is not None:
+            per_class = []
+            for klass in sorted(class_stats):
+                e = class_stats[klass]
+                lats = sorted(e.get("latencies", []))
+                per_class.append({
+                    "class": klass, "cases": e["n"],
+                    "detected": e["hit"], "missed": e["miss"],
+                    "median_latency_ms": lats[len(lats) // 2] if lats else None,
+                    "tech_tagged": e.get("tagged", 0),
+                })
+            json_out["per_class"] = per_class
+
         def tactic_table(key, title):
             stats = {}
             for row in runnable:
@@ -766,6 +815,13 @@ def build_report(corpus_path, log_path, alerts_path, min_severity,
                 w("| %s | %d | %d | %d | %d |"
                   % (name, entry["n"], entry["det"], entry["sig"],
                      entry["any"]))
+            if json_out is not None:
+                json_out["by_" + key] = [
+                    {"name": n, "cases": stats[n]["n"],
+                     "detectable": stats[n]["det"],
+                     "detected": stats[n]["sig"], "anyhit": stats[n]["any"]}
+                    for n in sorted(stats)
+                ]
 
         tactic_table("tactic", "Tactic")
         tactic_table("technique", "Technique")
@@ -820,6 +876,10 @@ def main(argv=None):
     ap.add_argument("--grace-ms", type=int, default=GRACE_MS_DEFAULT)
     ap.add_argument("--out", default=None,
                     help="write the report here instead of stdout")
+    ap.add_argument("--out-json", default=None,
+                    help="write a machine-readable JSON report here "
+                         "(dashboard / CI data source); markdown is only "
+                         "emitted if --out is also given")
     ap.add_argument("--verbose", action="store_true",
                     help="show the per-case detection matrix table")
     ap.add_argument("--allow-no-host", action="store_true",
@@ -827,20 +887,27 @@ def main(argv=None):
                          "export; the report discloses the degraded "
                          "attribution and is not cross-product comparable)")
     args = ap.parse_args(argv)
+    json_out = {} if args.out_json else None
     try:
         report, run_kind = build_report(args.corpus, args.exec_log,
                                         args.alerts, args.min_severity,
                                         args.grace_ms,
                                         allow_no_host=args.allow_no_host,
-                                        verbose=args.verbose)
+                                        verbose=args.verbose,
+                                        json_out=json_out)
     except (ValueError, OSError, json.JSONDecodeError) as exc:
         sys.stderr.write("scorer error: %s\n" % exc)
         return 1
+    if args.out_json:
+        with open(args.out_json, "w") as fh:
+            json.dump(json_out, fh, indent=1)
+            fh.write("\n")
+        print("wrote %s" % args.out_json)
     if args.out:
         with open(args.out, "w") as fh:
             fh.write(report)
         print("wrote %s" % args.out)
-    else:
+    elif not args.out_json:
         sys.stdout.write(report)
     return 1 if run_kind == "INTERRUPTED" else 0
 

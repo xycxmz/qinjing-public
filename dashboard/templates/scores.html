@@ -1,0 +1,86 @@
+{{template "header" .}}
+{{$d := .Data}}
+<section class="banner">
+  <strong>Product scores require real-machine measurement.</strong> A score needs a real HIDS run on a real
+  machine plus an adapter mapping its alerts to the canonical signal classes. Real-machine runs are currently
+  suspended, so this page records <strong>{{len $d.Runs}} run{{if ne (len $d.Runs) 1}}s{{end}}</strong>.
+  No synthetic number is ever presented as a real product result.
+</section>
+
+{{if not $d.Runs}}
+<section class="panel empty">
+  <h2>Pending real-machine measurement</h2>
+  <p class="muted">When a real run exists, its <code>scorer --out-json</code> report lands in <code>runs[]</code>
+    and this page will show, per product and per run:</p>
+  <ul class="links">
+    <li>Detection rate — signal-class primary column + any-hit fallback, by class and tactic.</li>
+    <li>False-positive rate — verified / attempt tiers (calibre {{$d.Meta.Calibre}}).</li>
+    <li>Per-class hit heatmap and median latency (attribution-window calibre, not true MTTD).</li>
+    <li>Multi-product comparison on the same environment and case set.</li>
+  </ul>
+  <p class="muted">Every number carries its run metadata (corpus sha, calibre, target, timestamp).
+    Any synthetic data used for UI debugging is labelled <code>SYNTHETIC DEMO</code>.</p>
+</section>
+{{else}}
+{{range $d.Runs}}
+<section class="panel runcard{{if .Synthetic}} synthetic{{end}}">
+  <div class="run-head">
+    <h2>{{if .Product}}{{.Product}}{{else}}unnamed product{{end}}</h2>
+    {{if .Synthetic}}<span class="demo-badge">SYNTHETIC DEMO — not a real product result</span>{{end}}
+  </div>
+  <p class="muted run-meta">
+    {{if .RunID}}run <code>{{.RunID}}</code> · {{end}}
+    {{if .Timestamp}}{{.Timestamp}} · {{end}}
+    corpus <code>{{shortSHA .Meta.CorpusSHA256}}</code> ·
+    calibre {{.Meta.Calibre}} ·
+    target {{.Meta.TargetKernel}} / {{.Meta.TargetDistro}}
+    {{if .Meta.Host}} · host {{.Meta.Host}}{{end}}
+  </p>
+  {{if ne .Meta.RunKind "COMPLETE"}}
+  <p class="warn-line">run kind is {{.Meta.RunKind}} — not a complete, publishable run.</p>
+  {{end}}
+
+  <div class="cols">
+    <div>
+      <h3>Detection</h3>
+      <table class="kv">
+        <tr><td>signal rate (≥1 expected)</td><td class="num">{{.Detection.Hit}}/{{.Detection.Detectable}} = {{fmtRate .Detection.SignalRate}}</td></tr>
+        <tr><td>strict (all expected)</td><td class="num">{{.Detection.Strict}}/{{.Detection.Detectable}} = {{fmtRate .Detection.StrictRate}}</td></tr>
+        <tr><td>any-hit (fallback)</td><td class="num">{{.Detection.Anyhit}}/{{.Detection.Detectable}} = {{fmtRate .Detection.AnyhitRate}}</td></tr>
+        <tr><td>not-run excluded</td><td class="num">{{.Detection.Notrun}}</td></tr>
+        <tr><td>transport-invalid</td><td class="num">{{.Detection.TransportInvalid}}</td></tr>
+      </table>
+    </div>
+    <div>
+      <h3>False positives</h3>
+      <table class="kv">
+        <tr><td>FP rate (verified)</td><td class="num">{{fmtRate .FP.VerifiedRate}}</td></tr>
+        <tr><td>FP rate (all attempts)</td><td class="num">{{fmtRate .FP.AttemptRate}}</td></tr>
+        <tr><td>verified / attempt / legacy</td><td class="num">{{.FP.Verified}} / {{.FP.Attempt}} / {{.FP.Legacy}}</td></tr>
+        <tr><td>violations (verified)</td><td class="num">{{.FP.Violations}} ({{.FP.ViolationsVerified}})</td></tr>
+      </table>
+    </div>
+  </div>
+
+  <h3>Per-class detection</h3>
+  <table class="grid">
+    <thead><tr><th>Class</th><th class="num">Cases</th><th class="num">Detected</th><th class="num">Missed</th><th class="num">Hit rate</th><th class="num">Med lat (ms)</th><th class="num">Tech-tag</th></tr></thead>
+    <tbody>
+    {{range .PerClass}}
+      <tr>
+        <td><code>{{.Class}}</code></td>
+        <td class="num">{{.Cases}}</td>
+        <td class="num">{{.Detected}}</td>
+        <td class="num">{{.Missed}}</td>
+        <td class="num">{{pct .Detected .Cases}}%</td>
+        <td class="num">{{fmtMs .MedianLatencyMs}}</td>
+        <td class="num">{{.TechTagged}}</td>
+      </tr>
+    {{end}}
+    </tbody>
+  </table>
+  <p class="muted">Latency is the attribution-window calibre (alert time minus case start), not true MTTD.</p>
+</section>
+{{end}}
+{{end}}
+{{template "footer" .}}
