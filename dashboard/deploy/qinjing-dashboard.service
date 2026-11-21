@@ -1,0 +1,28 @@
+# systemd unit for the qinjing coverage dashboard.
+# Install: copy binary + dashboard_data.json to /opt/qinjing/dashboard, then
+#   cp qinjing-dashboard.service /etc/systemd/system/
+#   systemctl daemon-reload && systemctl enable --now qinjing-dashboard
+# Refresh data: systemctl reload qinjing-dashboard  (sends SIGHUP -> hot reload)
+[Unit]
+Description=qinjing coverage dashboard (read-only, public)
+After=network.target
+
+[Service]
+Type=simple
+User=qinjing
+Group=qinjing
+WorkingDirectory=/opt/qinjing/dashboard
+ExecStart=/opt/qinjing/dashboard/qinjing-dashboard-linux --addr 127.0.0.1:8090 --data /opt/qinjing/dashboard/dashboard_data.json
+ExecReload=/bin/kill -HUP $MAINPID
+Restart=on-failure
+RestartSec=3
+
+# Hardening: read-only service, no privilege escalation, private tmp.
+NoNewPrivileges=true
+ProtectSystem=strict
+ProtectHome=true
+PrivateTmp=true
+ReadWritePaths=/opt/qinjing/dashboard
+
+[Install]
+WantedBy=multi-user.target

@@ -1,0 +1,28 @@
+false_positives:
+attacks:
+  - id: KM01
+    tactic: TA0003
+    technique: T1547.006
+    name: kernel module load (needs module_load telemetry)
+    platforms: [linux]
+    cmd: 'insmod /tmp/qinjing-mod.ko'
+    bin: insmod
+    creates_process: true
+    mode: real
+    expected_signals: [kernel_module_load]
+    related_signals: []
+    expect: detectable
+    impact: temporary
+  - id: EX01
+    tactic: TA0007
+    technique: T1046
+    name: external scan (execve argv)
+    platforms: [linux]
+    cmd: 'nmap -sS 203.0.113.9'
+    bin: nmap
+    creates_process: true
+    mode: real
+    expected_signals: [net_scan_external]
+    related_signals: []
+    expect: detectable
+    impact: none

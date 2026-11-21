@@ -1,11 +1,11 @@
 {{template "header" .}}
 {{$d := .Data}}
-<p class="muted">Attack cases per ATT&amp;CK tactic: how many of the tactic's matrix techniques the corpus
-  covers, and how many cases exercise them. A technique may belong to several tactics, so the covered
-  column sums to more than the {{$d.Meta.TechniquesCovered}} unique covered techniques.</p>
+{{template "census-note" .}}
+<p class="muted">{{$.T "Attack cases per ATT&CK tactic: how many of the tactic's matrix techniques the corpus covers, and how many cases exercise them. A technique may belong to several tactics, so the covered column sums to more than the"}} {{$d.Meta.TechniquesCovered}} {{$.T "unique covered techniques."}}</p>
+<p class="muted">{{$.T "The denominator of each row is the tactic's technique count in the pinned ATT&CK matrix (covered / total); it is a coverage census, not a detection denominator."}}</p>
 <section class="panel">
   <table class="grid">
-    <thead><tr><th>Tactic</th><th>Name</th><th class="num">Covered / total</th><th class="barcol">Coverage</th><th class="num">Cases</th></tr></thead>
+    <thead><tr><th>{{$.T "Tactic"}}</th><th>{{$.T "Name"}}</th><th class="num">{{$.T "Covered / total"}}</th><th class="barcol">{{$.T "Coverage"}}</th><th class="num">{{$.T "Cases"}}</th></tr></thead>
     <tbody>
     {{range $d.TacticCoverage}}
       <tr>

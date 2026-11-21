@@ -1,0 +1,77 @@
+{{template "header" .}}
+{{$d := .Data}}
+{{$v := .Cases}}
+<p class="muted">{{$.T "Every corpus case, benign and attack, in execution order. Filter and search run on the server (no JavaScript needed); each ID opens the case detail."}}</p>
+
+<section class="panel">
+  <form method="get" action="/cases" class="filterbar">
+    <label>{{$.T "Tactic"}}
+      <select name="tactic">
+        <option value="">{{$.T "All"}}</option>
+        {{range $v.Tactics}}<option value="{{.}}" {{if eq . $v.Filter.Tactic}}selected{{end}}>{{tacticName .}}</option>{{end}}
+      </select>
+    </label>
+    <label>{{$.T "Mode"}}
+      <select name="mode">
+        <option value="">{{$.T "All"}}</option>
+        {{range $v.Modes}}<option value="{{.}}" {{if eq . $v.Filter.Mode}}selected{{end}}>{{.}}</option>{{end}}
+      </select>
+    </label>
+    <label>{{$.T "Expect"}}
+      <select name="expect">
+        <option value="">{{$.T "All"}}</option>
+        {{range $v.Expects}}<option value="{{.}}" {{if eq . $v.Filter.Expect}}selected{{end}}>{{.}}</option>{{end}}
+      </select>
+    </label>
+    <label>{{$.T "Platform"}}
+      <select name="platform">
+        <option value="">{{$.T "All"}}</option>
+        {{range $v.Platforms}}<option value="{{.}}" {{if eq . $v.Filter.Platform}}selected{{end}}>{{.}}</option>{{end}}
+      </select>
+    </label>
+    <label class="grow">{{$.T "Search"}}
+      <input type="text" name="q" value="{{$v.Filter.Query}}" placeholder="{{$.T "id / name / cmd substring"}}">
+    </label>
+    <button type="submit">{{$.T "Filter"}}</button>
+    <a class="reset" href="/cases">{{$.T "Reset"}}</a>
+  </form>
+</section>
+
+<section class="panel">
+  <div class="catalog-head">
+    <span class="tag count">{{$v.Total}}<span class="card-den"> / {{$v.GrandTotal}}</span> {{$.T "cases"}}</span>
+    <span class="muted">{{$.T "Page"}} {{$v.Page}} / {{$v.Pages}}</span>
+  </div>
+  <div class="tablewrap">
+  <table class="grid catalog">
+    <thead><tr>
+      <th>ID</th><th>{{$.T "Name"}}</th><th>{{$.T "Tactic"}}</th><th>{{$.T "Technique"}}</th>
+      <th>{{$.T "Platform"}}</th><th>{{$.T "Mode"}}</th><th>{{$.T "Expect"}}</th><th>{{$.T "Expected signals"}}</th>
+    </tr></thead>
+    <tbody>
+    {{range $v.Rows}}
+      <tr>
+        <td><a href="/case?id={{.ID}}"><code>{{.ID}}</code></a></td>
+        <td>{{.Name}}</td>
+        <td><span class="tag">{{tacticName .Tactic}}</span></td>
+        <td>{{if ne .Technique "NONE"}}<code>{{.Technique}}</code>{{else}}<span class="muted">—</span>{{end}}</td>
+        <td>{{range .Platforms}}<span class="tag">{{.}}</span>{{end}}</td>
+        <td><span class="tag">{{.Mode}}</span></td>
+        <td><span class="tag {{.Expect}}">{{.Expect}}</span></td>
+        <td>{{if .ExpectedSignals}}{{range .ExpectedSignals}}<code>{{.}}</code> {{end}}{{else}}<span class="muted">—</span>{{end}}</td>
+      </tr>
+    {{else}}
+      <tr><td colspan="8" class="muted empty-row">{{$.T "No cases match the current filter."}}</td></tr>
+    {{end}}
+    </tbody>
+  </table>
+  </div>
+  {{if gt $v.Pages 1}}
+  <nav class="pager">
+    {{if gt $v.Page 1}}<a href="{{$v.PageURL (add $v.Page -1)}}">← {{$.T "Previous"}}</a>{{else}}<span class="muted">← {{$.T "Previous"}}</span>{{end}}
+    <span class="muted">{{$v.Page}} / {{$v.Pages}}</span>
+    {{if lt $v.Page $v.Pages}}<a href="{{$v.PageURL (add $v.Page 1)}}">{{$.T "Next"}} →</a>{{else}}<span class="muted">{{$.T "Next"}} →</span>{{end}}
+  </nav>
+  {{end}}
+</section>
+{{template "footer" .}}

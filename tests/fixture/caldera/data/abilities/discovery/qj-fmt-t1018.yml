@@ -1,0 +1,15 @@
+---
+# stockpile-FORMAT fixture (not verbatim upstream): common Linux utility,
+# used to exercise the importer offline. Format (c) mitre/stockpile Apache-2.0.
+- id: qj-fmt-t1018
+  name: Remote System Discovery
+  description: List neighbour hosts
+  tactic: discovery
+  technique:
+    attack_id: T1018
+    name: Remote System Discovery
+  platforms:
+    linux:
+      sh:
+        command: |
+          ip neigh show

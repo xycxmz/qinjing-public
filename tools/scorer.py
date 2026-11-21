@@ -37,6 +37,7 @@ import sys
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 from parse import parse_corpus  # noqa: E402
+from stats import exact_binomial_ci, upper_bound  # noqa: E402
 
 SEV_ORDER = {"low": 1, "medium": 2, "high": 3, "critical": 4}
 GRACE_MS_DEFAULT = 3500  # pipeline latency: intent poll + batch flush
@@ -59,6 +60,73 @@ def in_denominator(row):
     every target. Only a declared binary that is missing keeps a case out
     of every denominator."""
     return row["bin_found"] == "1" or row["case"]["mode"] == "sim-builtin"
+
+
+OBS_TABLE = os.path.join(os.path.dirname(os.path.dirname(
+    os.path.abspath(__file__))), "data", "observation-contract.tsv")
+
+
+def load_observation_contract():
+    """C7: class -> measured telemetry surface (data/observation-contract.tsv,
+    authoritative like vocab-anchors.tsv). Absent file degrades to {} so every
+    class defaults to execve and no case is wrongly called not-measured."""
+    table = {}
+    try:
+        with open(OBS_TABLE, encoding="ascii") as fh:
+            for line in fh:
+                s = line.strip()
+                if not s or s.startswith("#"):
+                    continue
+                cells = s.split("\t")
+                if len(cells) >= 2:
+                    table[cells[0]] = cells[1]
+    except OSError:
+        pass
+    return table
+
+
+TIER_NAMES = {0: "none", 1: "general", 2: "tactic", 3: "technique"}
+
+
+def load_tech_tactics():
+    """G3: technique -> matrix tactics, for the tactic tier. Optional; absent
+    matrix degrades to {} (native non-exact labels then score general)."""
+    try:
+        import attack_coverage
+        _v, matrix = attack_coverage.load_matrix(os.path.join(
+            os.path.dirname(OBS_TABLE), "attack-enterprise.txt"))
+        return {t: e["tactics"] for t, e in matrix.items()}
+    except Exception:
+        return {}
+
+
+def detection_tier(case, observed, min_severity, tech_tactics):
+    """G3: best MITRE-style detection tier for a case over its attributed
+    high-severity alerts. technique = native label carrying the case's exact
+    technique; tactic = native label whose technique lies in the case's tactic;
+    general = a high-severity analytic alert without ATT&CK context. Telemetry
+    (event_kind != alert) is stray by qinjing design, so the scale here is
+    general/tactic/technique (disclosed in the report). Additive: does not
+    change verdicts or rates."""
+    best = 0
+    tech = case.get("technique", "")
+    tactic = case.get("tactic", "")
+    for a in observed:
+        if a.get("event_kind") != "alert":
+            continue
+        if SEV_ORDER.get(a.get("severity"), 0) < SEV_ORDER[min_severity]:
+            continue
+        mitre = a.get("mitre_attack") or []
+        native = a.get("label_source") == "native"
+        if native and tech and tech in mitre:
+            best = max(best, 3)
+        elif native and mitre and tech_tactics and \
+                any(tactic in tech_tactics.get(t, ()) for t in mitre):
+            best = max(best, 2)
+        else:
+            best = max(best, 1)
+    return best
+
 
 # Optional runner-injected attribution marker: "# qj:<caseid>:<runtag>"
 # riding the same argv element as the command. A marker only counts when its
@@ -291,9 +359,16 @@ def build_report(corpus_path, log_path, alerts_path, min_severity,
     ambiguous = []
     nohost_admitted = 0
     run_host = header.get("host", "")
+    clock_domains = set()
     for alert in alerts:
-        ts_ms = alert_ts_ms(alert.get("timestamp", ""))
+        # C6: prefer the source event time when the product exports it; the
+        # bare timestamp may be event/alert/ingest time (clock-domain
+        # ambiguity). Absent source_event_time falls back to timestamp (O7).
+        src = alert.get("source_event_time")
+        ts_ms = alert_ts_ms(src or alert.get("timestamp", ""))
         alert["_ts_ms"] = ts_ms
+        alert["_clock"] = "source_event_time" if src else "timestamp"
+        clock_domains.add(alert["_clock"])
         if ts_ms < run_start_ms - STRAY_MARGIN_MS or \
            ts_ms > run_end_ms + STRAY_MARGIN_MS:
             stray.append((alert, "outside run window (pre-existing noise)"))
@@ -375,11 +450,23 @@ def build_report(corpus_path, log_path, alerts_path, min_severity,
         holder["observed"].append(alert)
         basis_counts[basis] += 1
 
+    # C7: surfaces the run actually exported (run-wide, from every alert).
+    # A class whose contracted surface is absent was not measurable by this
+    # product/run, so it scores NOT-MEASURED rather than MISS. execve is the
+    # runner's argv baseline (every executed case is argv-visible), assumed
+    # exported even when alerts omit event_source; non-execve surfaces
+    # (module_load/bpf_load/connect/dns_query) require explicit alerts.
+    obs_contract = load_observation_contract()
+    exported_surfaces = {"execve"} | {a.get("event_source") for a in alerts
+                                      if a.get("event_source")}
+    tech_tactics = load_tech_tactics()
+
     verdicts = {}
     anyhit = {}
     for row in rows:
         case = row["case"]
         expected = case.get("expected_signals", [])
+        req_surfaces = {obs_contract.get(s, "execve") for s in expected}
         obs_classes = []
         for alert in row["observed"]:
             for klass in alert.get("signal_class", []):
@@ -420,6 +507,12 @@ def build_report(corpus_path, log_path, alerts_path, min_severity,
             # ran; keep it out of every denominator even if an alert landed
             # in its window. sim-builtin rows passed above - they ran.
             verdicts[row["id"]] = "NOT-RUN (bin=0)"
+        elif expected and not (req_surfaces & exported_surfaces):
+            # C7: the product exported none of the telemetry this case's
+            # classes are measured on; absence of evidence is not a MISS.
+            verdicts[row["id"]] = "NOT-MEASURED (%s)" \
+                % ",".join(sorted(req_surfaces))
+            anyhit[row["id"]] = False
         elif len(hit) == len(expected) and expected:
             verdicts[row["id"]] = "HIT"
         elif hit:
@@ -439,6 +532,16 @@ def build_report(corpus_path, log_path, alerts_path, min_severity,
             "host": header.get("host", "?"),
             "target_kernel": header.get("kernel", "?"),
             "target_distro": header.get("distro", "?"),
+            # C12: order/state/reset provenance; pre-C12 logs lack these and
+            # are disclosed as not-recorded rather than assumed.
+            "run_state": {
+                "seed": header.get("seed", "not-recorded"),
+                "order_sha": header.get("order_sha", "not-recorded"),
+                "state": header.get("state", "not-recorded"),
+                "round": header.get("round", "not-recorded"),
+                "reset": header.get("reset", "not-recorded"),
+                "log_loss": header.get("log_loss", "not-recorded"),
+            },
         }
         json_out["totals"] = {
             "cases": len(cases["false_positives"]) + len(cases["attacks"]),
@@ -462,6 +565,14 @@ def build_report(corpus_path, log_path, alerts_path, min_severity,
         if header.get("kernel") or header.get("distro"):
             w("- target: kernel=%s distro=%s"
               % (header.get("kernel", "?"), header.get("distro", "?")))
+        w("- run state: seed=%s state=%s round=%s reset=%s log_loss=%s"
+          " order_sha=%s"
+          % (header.get("seed", "not-recorded"),
+             header.get("state", "not-recorded"),
+             header.get("round", "not-recorded"),
+             header.get("reset", "not-recorded"),
+             header.get("log_loss", "not-recorded"),
+             header.get("order_sha", "not-recorded")))
     if run_class["kind"] == "SUBSET":
         w("- run: SUBSET(%s) - statistics cover the declared subset only"
           % header.get("subset", "?"))
@@ -631,9 +742,12 @@ def build_report(corpus_path, log_path, alerts_path, min_severity,
         if run_class["dup_detail"]:
             w("- duplicate ids: %s" % ", ".join(run_class["dup_detail"]))
     else:
+        not_measured_rows = [r for r in attack_rows
+                             if verdicts[r["id"]].startswith("NOT-MEASURED")]
         runnable = [r for r in attack_rows
-                    if in_denominator(r) and r["rc"] != "255"]
-        notrun = len(attack_rows) - len(runnable)
+                    if in_denominator(r) and r["rc"] != "255"
+                    and not verdicts[r["id"]].startswith("NOT-MEASURED")]
+        notrun = len(attack_rows) - len(runnable) - len(not_measured_rows)
         builtin_den = [r for r in runnable
                        if r["case"]["mode"] == "sim-builtin"]
         det = [r for r in runnable if r["case"]["expect"] == "detectable"]
@@ -676,9 +790,12 @@ def build_report(corpus_path, log_path, alerts_path, min_severity,
                 "detectable": len(det), "hit": len(det_hit),
                 "strict": len(det_strict), "anyhit": len(det_any),
                 "notrun": notrun, "transport_invalid": transport_rows,
+                "not_measured": len(not_measured_rows),
                 "signal_rate": (len(det_hit) / len(det)) if det else None,
                 "strict_rate": (len(det_strict) / len(det)) if det else None,
                 "anyhit_rate": (len(det_any) / len(det)) if det else None,
+                "signal_ci95": list(exact_binomial_ci(len(det_hit), len(det)))
+                               if det else [None, None],
             }
             json_out["fp"] = {
                 "evaluable": len(fp_evaluable), "verified": len(fp_verified),
@@ -689,6 +806,10 @@ def build_report(corpus_path, log_path, alerts_path, min_severity,
                                  if fp_verified else None,
                 "attempt_rate": (len(fp_viol) / len(fp_evaluable))
                                 if fp_evaluable else None,
+                # C11: a 0-FP run is not a zero-width interval; carry the
+                # one-sided exact upper bound so 0/120 reads as <=2.47%.
+                "attempt_upper95": upper_bound(len(fp_viol),
+                                               len(fp_evaluable)),
             }
 
         w("")
@@ -728,8 +849,11 @@ def build_report(corpus_path, log_path, alerts_path, min_severity,
         # proxy, not true MTTD since the canonical timestamp may be
         # event/alert/ingest time).
         class_stats = {}
-        for row in runnable:
+        # C7: not-measured cases stay in the per-class denominator as their
+        # own bucket so each row reconciles Cases = Detected+Missed+NotMeasured.
+        for row in runnable + not_measured_rows:
             case = row["case"]
+            is_nm = verdicts[row["id"]].startswith("NOT-MEASURED")
             observed_classes = set()
             tagged_classes = set()
             case_tech = case.get("technique", "")
@@ -744,20 +868,27 @@ def build_report(corpus_path, log_path, alerts_path, min_severity,
                         tagged_classes.add(klass)
                     if klass in case.get("expected_signals", []):
                         latency = ts - row["start_ms"]
+                        e2 = class_stats.setdefault(klass,
+                                                    {"n": 0, "hit": 0,
+                                                     "miss": 0, "nm": 0,
+                                                     "latencies": [],
+                                                     "tagged": 0, "neg": 0})
                         if latency >= 0:
-                            e2 = class_stats.setdefault(klass,
-                                                        {"n": 0, "hit": 0,
-                                                         "miss": 0,
-                                                         "latencies": [],
-                                                         "tagged": 0})
                             e2["latencies"].append(latency)
+                        else:
+                            # C6: negative latencies were silently dropped;
+                            # count them so the report can disclose the loss.
+                            e2["neg"] += 1
             for klass in case.get("expected_signals", []):
                 entry = class_stats.setdefault(klass,
                                                {"n": 0, "hit": 0,
-                                                "miss": 0, "latencies": [],
-                                                "tagged": 0})
+                                                "miss": 0, "nm": 0,
+                                                "latencies": [],
+                                                "tagged": 0, "neg": 0})
                 entry["n"] += 1
-                if klass in observed_classes:
+                if is_nm:
+                    entry["nm"] += 1
+                elif klass in observed_classes:
                     entry["hit"] += 1
                 else:
                     entry["miss"] += 1
@@ -765,19 +896,20 @@ def build_report(corpus_path, log_path, alerts_path, min_severity,
                     entry["tagged"] += 1
         w("")
         w("| Signal class | Cases | Detected | Missed | Hit rate |"
-          " Med lat (ms) | Tech-tag |")
-        w("|---|---|---|---|---|---|---|")
+          " Med lat (ms) | Tech-tag | NotMeasured |")
+        w("|---|---|---|---|---|---|---|---|")
         for klass in sorted(class_stats, key=lambda k: -class_stats[k]["n"]):
             e = class_stats[klass]
-            pct = "%.0f%%" % (100.0 * e["hit"] / e["n"]) if e["n"] else "-"
+            measured = e["n"] - e.get("nm", 0)
+            pct = "%.0f%%" % (100.0 * e["hit"] / measured) if measured else "-"
             lats = e.get("latencies", [])
             med_lat = int(sorted(lats)[len(lats) // 2]) if lats else None
             tagged = e.get("tagged", 0)
             tagged_pct = ("%d/%d" % (tagged, e["n"])) if tagged else "-"
-            w("| %s | %d | %d | %d | %s | %s | %s |"
+            w("| %s | %d | %d | %d | %s | %s | %s | %d |"
               % (klass, e["n"], e["hit"], e["miss"], pct,
                  med_lat if med_lat is not None else "-",
-                 tagged_pct))
+                 tagged_pct, e.get("nm", 0)))
 
         if json_out is not None:
             per_class = []
@@ -787,10 +919,167 @@ def build_report(corpus_path, log_path, alerts_path, min_severity,
                 per_class.append({
                     "class": klass, "cases": e["n"],
                     "detected": e["hit"], "missed": e["miss"],
+                    "not_measured": e.get("nm", 0),
                     "median_latency_ms": lats[len(lats) // 2] if lats else None,
                     "tech_tagged": e.get("tagged", 0),
+                    "latency_n": len(lats),
+                    "negative_dropped": e.get("neg", 0),
+                    "hit_ci95": list(exact_binomial_ci(
+                        e["hit"], e["n"] - e.get("nm", 0))),
                 })
             json_out["per_class"] = per_class
+
+        # C6/C11 disclosure: latency is a HIT-subset, attribution-window
+        # proxy (negative latencies were silently dropped before); rates on
+        # small/zero denominators carry exact binomial bounds; micro/macro
+        # are side-by-side views with no natural total score; correlated
+        # cases make the effective sample smaller than the case count.
+        neg_total = sum(e.get("neg", 0) for e in class_stats.values())
+        tot_n = sum(e["n"] - e.get("nm", 0) for e in class_stats.values())
+        tot_hit = sum(e["hit"] for e in class_stats.values())
+        micro = (tot_hit / tot_n) if tot_n else None
+        rates = [e["hit"] / (e["n"] - e.get("nm", 0))
+                 for e in class_stats.values() if e["n"] - e.get("nm", 0)]
+        macro = (sum(rates) / len(rates)) if rates else None
+        nm_total = sum(e.get("nm", 0) for e in class_stats.values())
+        w("")
+        w("### Statistical disclosure (docs/11 C6/C7/C11)")
+        w("")
+        w("- latency: HIT-subset only, attribution-window proxy (not true"
+          " MTTD); clock domain: %s; negative latencies dropped: %d"
+          % (",".join(sorted(clock_domains)) or "timestamp", neg_total))
+        w("- not-measured: %d case-instances whose contracted telemetry"
+          " surface the run did not export (excluded from rates, not MISS)"
+          % nm_total)
+        w("- micro signal rate (pooled): %s; macro (mean per-class): %s."
+          " No natural total score; these are side-by-side views."
+          % (("%.0f%%" % (100 * micro)) if micro is not None else "-",
+             ("%.0f%%" % (100 * macro)) if macro is not None else "-"))
+        if det:
+            lo, hi = exact_binomial_ci(len(det_hit), len(det))
+            w("- signal rate %d/%d, exact 95%% binomial interval"
+              " [%.1f%%, %.1f%%]" % (len(det_hit), len(det),
+                                    100 * lo, 100 * hi))
+        if fp_evaluable:
+            w("- FP %d/%d, one-sided 95%% upper bound %.2f%% (0 FP is not a"
+              " zero-width interval)"
+              % (len(fp_viol), len(fp_evaluable),
+                 100 * upper_bound(len(fp_viol), len(fp_evaluable))))
+        w("- independence: cases are correlated (generated variants,"
+          " single-family benign personas); effective sample size < case"
+          " count; repeated runs are not independent. Binomial intervals"
+          " assume independence and are optimistic.")
+        w("- do not extrapolate operational alert burden from the benign"
+          " ratio.")
+        if json_out is not None:
+            json_out["latency"] = {
+                "subset": "HIT-only", "negative_dropped": neg_total,
+                "calibre": "attribution-window proxy, not MTTD",
+                "clock_domains": sorted(clock_domains),
+            }
+            json_out["aggregation"] = {
+                "micro_signal_rate": micro, "macro_signal_rate": macro,
+                "total_score": None, "note": "no natural total score",
+            }
+
+        # C8: strict process-coherence view, parallel to the expected-window
+        # heuristic (additive; does not change primary verdicts). Groups each
+        # detectable case's attributed alerts by process root (pid/ppid tree).
+        # auid is unset in the reference adapter and the runner records no
+        # case->pid, so this is a coherence cross-check, not re-attribution.
+        pidmap = {}
+        for a in alerts:
+            p = a.get("process") or {}
+            if p.get("pid") is not None:
+                pidmap[p["pid"]] = p
+
+        def proc_root(pid):
+            seen = set()
+            while pid in pidmap and pid not in seen:
+                seen.add(pid)
+                pp = pidmap[pid].get("ppid")
+                if pp is None or pp not in pidmap or pp == pid:
+                    break
+                pid = pp
+            return pid
+
+        sp_coherent = sp_incoherent = sp_unattr = 0
+        sp_rows = []
+        for row in det:
+            roots = set()
+            has_proc = False
+            for a in row["observed"]:
+                p = a.get("process") or {}
+                if p.get("pid") is not None:
+                    has_proc = True
+                    roots.add(proc_root(p["pid"]))
+            if not has_proc:
+                sp_unattr += 1
+                tag = "unattributable (no process)"
+            elif len(roots) == 1:
+                sp_coherent += 1
+                tag = "coherent (root %s)" % next(iter(roots))
+            else:
+                sp_incoherent += 1
+                tag = "incoherent (%d roots)" % len(roots)
+            sp_rows.append((row["id"], tag))
+        w("")
+        w("### Strict process view (C8, parallel to heuristic)")
+        w("")
+        w("- coherent=%d incoherent=%d unattributable=%d (of %d detectable)"
+          % (sp_coherent, sp_incoherent, sp_unattr, len(det)))
+        w("- auid unavailable (reference adapter unset); runner records no"
+          " case->pid: coherence cross-check only, not re-attribution.")
+        for rid, tag in sp_rows:
+            w("- %s: %s" % (rid, tag))
+        if json_out is not None:
+            json_out["strict_process"] = {
+                "coherent": sp_coherent, "incoherent": sp_incoherent,
+                "unattributable": sp_unattr,
+                "auid_available": any(
+                    (a.get("process") or {}).get("auid") is not None
+                    for a in alerts),
+                "note": "coherence cross-check of heuristic; not re-attribution",
+                "per_case": [{"id": r, "view": t} for r, t in sp_rows],
+            }
+
+        # G3: detection-quality tiers (MITRE-style), additive cross-check of
+        # the all-or-nothing signal verdict. Per detectable case, best tier
+        # over attributed high-sev alerts; aggregated per class and overall.
+        tier_totals = {0: 0, 1: 0, 2: 0, 3: 0}
+        tier_by_class = {}
+        for row in det:
+            t = detection_tier(row["case"], row["observed"],
+                               min_severity, tech_tactics)
+            tier_totals[t] += 1
+            for klass in row["case"].get("expected_signals", []):
+                d = tier_by_class.setdefault(klass, {0: 0, 1: 0, 2: 0, 3: 0})
+                d[t] += 1
+        w("")
+        w("### Detection quality tiers (G3, MITRE-style)")
+        w("")
+        w("- overall: technique=%d tactic=%d general=%d none=%d (of %d"
+          " detectable)" % (tier_totals[3], tier_totals[2], tier_totals[1],
+                            tier_totals[0], len(det)))
+        w("- scale general/tactic/technique; telemetry excluded by design"
+          " (stray). Tiers describe detection context, not the verdict.")
+        w("")
+        w("| Signal class | technique | tactic | general | none |")
+        w("|---|---|---|---|---|")
+        for klass in sorted(tier_by_class):
+            d = tier_by_class[klass]
+            w("| %s | %d | %d | %d | %d |"
+              % (klass, d[3], d[2], d[1], d[0]))
+        if json_out is not None:
+            json_out["tiers"] = {
+                "totals": {TIER_NAMES[k]: v for k, v in tier_totals.items()},
+                "per_class": [
+                    {"class": k,
+                     **{TIER_NAMES[i]: tier_by_class[k][i] for i in range(4)}}
+                    for k in sorted(tier_by_class)],
+                "note": "general/tactic/technique; telemetry excluded (stray);"
+                        " additive, does not change verdicts",
+            }
 
         def tactic_table(key, title):
             stats = {}

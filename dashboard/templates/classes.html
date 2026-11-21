@@ -1,14 +1,19 @@
 {{template "header" .}}
 {{$d := .Data}}
 {{$max := maxClassCases $d.ClassDistribution}}
-<p class="muted">Case distribution across the {{$d.Totals.Classes}} signal classes. Every case in a class is
-  <em>detectable</em> (expected to fire a signal). The {{$d.Totals.AttackNoClass}} <em>gap</em> cases are expected
-  blind spots with no signal class, so they sit outside this table:
-  {{len $d.ClassDistribution}} classes hold {{$d.Totals.AttackExpect.detectable}} cases, plus
-  {{$d.Totals.AttackNoClass}} no-class = {{$d.Totals.Attack}} attack cases.</p>
+<p class="muted">{{$.T "Case distribution across the"}} {{$d.Totals.Classes}} {{$.T "signal classes. Every case in a class is"}}
+  <em>{{$.T "detectable"}}</em> {{$.T "(expected to fire a signal). The"}} {{$d.Totals.AttackNoClass}} <em>{{$.T "gap"}}</em> {{$.T "cases are expected blind spots with no signal class, so they sit outside this table:"}}
+  {{len $d.ClassDistribution}} {{$.T "classes hold"}} {{$d.Totals.AttackExpect.detectable}} {{$.T "cases, plus"}}
+  {{$d.Totals.AttackNoClass}} {{$.T "no-class ="}} {{$d.Totals.Attack}} {{$.T "attack cases."}}</p>
+<section class="banner">
+  <strong>{{$.T "Denominator transparency."}}</strong> {{$.T "Each class splits by execution mode below. Cases in mode"}}
+  <code>sim-missing-bin</code> {{$.T "simulate a missing binary and are NOT-RUN on a bare reference bench, enlarging the corpus denominator but not the evaluable one. See"}}
+  <a href="/provisioning">{{$.T "Provisioning"}}</a> {{$.T "for per-class evaluability."}}
+</section>
 <section class="panel">
+  <div class="tablewrap">
   <table class="grid">
-    <thead><tr><th>Signal class</th><th class="num">Cases</th><th class="barcol">Distribution</th><th class="num">Detectable</th><th class="num">Gap</th></tr></thead>
+    <thead><tr><th>{{$.T "Signal class"}}</th><th class="num">{{$.T "Cases"}}</th><th class="barcol">{{$.T "Distribution"}}</th><th class="num">{{$.T "Detectable"}}</th><th class="num">{{$.T "Gap"}}</th><th class="num">{{$.T "Real"}}</th><th class="num">sim-missing-bin</th><th class="num">sim-builtin</th></tr></thead>
     <tbody>
     {{range $d.ClassDistribution}}
       <tr>
@@ -17,9 +22,13 @@
         <td class="barcol"><div class="bar"><div class="bar-fill" style="width:{{pct .Cases $max}}%"></div></div></td>
         <td class="num">{{.Detectable}}</td>
         <td class="num">{{.Gap}}</td>
+        <td class="num">{{index .ModeBreakdown "real"}}</td>
+        <td class="num">{{index .ModeBreakdown "sim-missing-bin"}}</td>
+        <td class="num">{{index .ModeBreakdown "sim-builtin"}}</td>
       </tr>
     {{end}}
     </tbody>
   </table>
+  </div>
 </section>
 {{template "footer" .}}

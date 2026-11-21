@@ -1,0 +1,58 @@
+# Per-class observation contract (docs/11 C7). One row per signal class:
+# the telemetry surface the class is measured on. Reference adapter xiezhi
+# measures most classes via execve (argv); only module_load/bpf_load/connect/
+# dns_query ride non-execve surfaces. A class whose surface a run did not
+# export scores NOT-MEASURED, not MISS. Tokens = docs/02 event_source vocab.
+# Loaded by tools/observation_lint.py; authoritative like vocab-anchors.tsv.
+account_creation	execve
+account_discovery	execve
+archive_staging	execve
+at_job_persistence	execve
+audit_log_tamper	execve
+c2_socket_script	execve
+capability_abuse_grant	execve
+cloud_cluster_recon	execve
+cloud_metadata_access	execve
+container_escape	execve
+credential_dump_shadow	execve
+credential_env_read	execve
+credential_file_read	execve
+cryptomining	execve
+data_destruction	execve
+db_mass_dump	execve
+defense_service_stop	execve
+disk_wipe	execve
+dns_tunneling	dns_query
+download_and_execute	execve
+ebpf_load	bpf_load
+exfil_transfer	execve
+file_attr_lock	execve
+fileless_execution	execve
+git_hook_persistence	execve
+history_clear	execve
+indicator_removal	execve
+k8s_pod_exec	execve
+kernel_module_load	module_load
+lateral_ssh_tunnel	execve
+linker_hijack	execve
+net_recon_local	execve
+net_scan_external	execve
+persistence_boot_script	execve
+persistence_cron_write	execve
+persistence_pam	execve
+persistence_ssh_key	execve
+persistence_systemd	execve
+reverse_shell	execve
+root_cert_install	execve
+setuid_discovery	execve
+shell_config_persistence	execve
+sniffer_run	execve
+sudoers_change	execve
+suspicious_interpreter_exec	execve
+system_discovery	execve
+systemd_timer_persistence	execve
+timestomp	execve
+tor_connection	connect
+tunnel_tool_use	execve
+valid_account_remote_login	execve
+webshell_write	execve

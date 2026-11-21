@@ -1,0 +1,125 @@
+{{template "header" .}}
+{{$v := .Case}}
+{{$c := $v.Case}}
+<p class="muted"><a href="/cases">← {{$.T "Back to catalog"}}</a></p>
+
+<section class="panel">
+  <h2>{{$.T "1. ATT&CK mapping"}}</h2>
+  {{if ne $c.Technique "NONE"}}
+    <p class="case-tech"><a href="https://attack.mitre.org/techniques/{{$c.Technique}}/"><code>{{$c.Technique}}</code></a>{{if $c.TechniqueName}} <span class="tech-name">{{$c.TechniqueName}}</span>{{end}}</p>
+    <p class="muted">{{$.T "Tactic"}}: <span class="tag">{{tacticName $c.Tactic}}</span></p>
+  {{else}}
+    <p class="muted">{{$.T "Benign case — no ATT&CK technique (BENIGN)."}}</p>
+  {{end}}
+</section>
+
+<section class="panel">
+  <h2>{{$.T "2. Command & execution"}}</h2>
+  <pre class="cmd"><code>{{$c.Cmd}}</code></pre>
+  <table class="kv case-kv">
+    <tr><td>{{$.T "Binary"}}</td><td><code>{{$c.Bin}}</code></td></tr>
+    <tr><td>{{$.T "Mode"}}</td><td><span class="tag">{{$c.Mode}}</span></td></tr>
+    <tr><td>{{$.T "Creates process"}}</td><td>{{if $c.CreatesProcess}}{{$.T "yes"}}{{else}}{{$.T "no"}}{{end}}</td></tr>
+    <tr><td>{{$.T "Impact"}}</td><td><span class="tag {{$c.Impact}}">{{$c.Impact}}</span></td></tr>
+    <tr><td>{{$.T "Platform"}}</td><td>{{range $c.Platforms}}<span class="tag">{{.}}</span>{{end}}</td></tr>
+    {{if $c.Bucket}}<tr><td>{{$.T "Bucket"}}</td><td><code>{{$c.Bucket}}</code></td></tr>{{end}}
+  </table>
+</section>
+
+<section class="panel">
+  <h2>{{$.T "3. Expected signals"}}</h2>
+  {{if eq $c.Expect "gap"}}
+    <p class="warn-line">{{$.T "gap — no signal class, an expected coverage hole."}}
+      <a href="{{$v.ContributeURL}}">{{$.T "Propose a detection case"}}</a></p>
+  {{else if eq $c.Expect "silent"}}
+    <p class="muted">{{$.T "silent — benign case; a correct HIDS raises no high-severity alert."}}</p>
+  {{end}}
+  {{if $v.Expected}}
+    <h3>{{$.T "Expected signal classes"}}</h3>
+    {{range $v.Expected}}{{template "signalclass" .}}{{end}}
+  {{else if ne $c.Expect "silent"}}
+    {{if ne $c.Expect "gap"}}<p class="muted">{{$.T "No expected signal class."}}</p>{{end}}
+  {{end}}
+  {{if $v.Related}}
+    <h3>{{$.T "Related signals (informational, not sufficient alone)"}}</h3>
+    {{range $v.Related}}{{template "signalclass" .}}{{end}}
+  {{end}}
+</section>
+
+<section class="panel">
+  <h2>{{$.T "4. Detection & contribution"}}</h2>
+  <p class="muted">{{$.T "To detect this case, a HIDS must map its alerts to the signal classes above (section 3). The external counterparts list the Sigma / Elastic / Wazuh rules each class corresponds to."}}</p>
+  <p><a class="cta" href="{{$v.ContributeURL}}">{{$.T "Contribute a case or detection mapping"}}</a>
+    <span class="muted">{{$.T "(public repo issues — propose a new case, anchor, or adapter mapping)."}}</span></p>
+</section>
+
+<section class="panel">
+  <h2>{{$.T "5. Detection evidence"}}</h2>
+  {{if eq $c.Expect "silent"}}
+    <p class="muted">{{$.T "Benign case: a correct HIDS raises no high+ alert inside the tight window. See the"}} <a href="/fp">{{$.T "FP"}}</a> {{$.T "methodology."}}</p>
+  {{else if eq $c.Expect "gap"}}
+    <p class="muted">{{$.T "gap case: no signal class, so no adapter mapping applies."}}</p>
+  {{else}}
+    <h3>{{$.T "Expected detection profile"}}</h3>
+    <p class="muted">{{$.T "Which adapter rules map each expected signal class, and how the G3 detection tiers apply. Rule identifiers come from the xiezhi and wazuh adapters; execve counts are argv classifiers (the regexes stay in the adapter source)."}}</p>
+    {{range $v.Expected}}
+      <div class="signalclass">
+        <div class="sc-head"><code>{{.Class}}</code></div>
+        {{range .AdapterRules}}
+          <p class="muted sc-counterpart"><strong>{{.Adapter}}</strong>:
+            {{range .Rules}}<span class="tag">{{.}}</span> {{end}}
+            {{if .ExecveClassifiers}}<span class="tag">execve argv &times; {{.ExecveClassifiers}}</span>{{end}}
+            {{if and (not .Rules) (not .ExecveClassifiers)}}{{$.T "No adapter rule maps this class."}}{{end}}
+          </p>
+        {{end}}
+      </div>
+    {{end}}
+    {{template "tier-legend" .}}
+  {{end}}
+
+  {{$d := .Data}}
+  {{if $d.Runs}}
+    {{if $v.Expected}}
+      <h3>{{$.T "Class-level detection from runs"}}</h3>
+      <p class="muted">{{$.T "Aggregate over all cases in the class, not this case alone. Per-case observed evidence is a follow-up (below)."}}</p>
+      {{range $d.Runs}}
+        {{$run := .}}
+        <p class="run-meta"><strong>{{if .Product}}{{.Product}}{{else}}{{$.T "unnamed product"}}{{end}}</strong>{{if .Synthetic}} <span class="demo-badge">{{$.T "SYNTHETIC DEMO"}}</span>{{end}}</p>
+        <div class="tablewrap">
+        <table class="grid">
+          <thead><tr><th>{{$.T "Class"}}</th><th class="num">{{$.T "Cases"}}</th><th class="num">{{$.T "Detected"}}</th><th class="num">{{$.T "Missed"}}</th><th class="num">{{$.T "Hit rate"}}</th><th class="num">{{$.T "Hit 95% CI"}}</th><th class="num">{{$.T "Tiers"}}</th></tr></thead>
+          <tbody>
+          {{range .PerClass}}
+            {{if hasStr $c.ExpectedSignals .Class}}
+              <tr>
+                <td><code>{{.Class}}</code></td>
+                <td class="num">{{.Cases}}</td>
+                <td class="num">{{.Detected}}</td>
+                <td class="num">{{.Missed}}</td>
+                <td class="num">{{pct .Detected .Cases}}%</td>
+                <td class="num">{{fmtCI .HitCI95}}</td>
+                <td class="num">{{$t := tierFor $run.Tiers.PerClass .Class}}{{if $t}}{{$t.Technique}}/{{$t.Tactic}}/{{$t.General}}/{{$t.None}}{{else}}-{{end}}</td>
+              </tr>
+            {{end}}
+          {{end}}
+          </tbody>
+        </table>
+        </div>
+      {{end}}
+    {{end}}
+  {{else}}
+    {{if ne $c.Expect "silent"}}<p class="muted">{{$.T "No run scored yet; class-level detection evidence activates when a real run exists."}}</p>{{end}}
+  {{end}}
+  <p class="muted">{{$.T "Per-case observed alerts, attribution basis (marker / expected-window / in-progress / first-covering / late-claimed), verdict, and label_source are not emitted by scorer --out-json today (aggregates only). Per-case evidence drill-down is a follow-up pending that scorer extension."}}</p>
+  <p class="muted">{{$.T "Per-class table on the"}} <a href="/scores">{{$.T "Scores"}}</a> {{$.T "page."}}</p>
+</section>
+{{template "footer" .}}
+
+{{define "signalclass"}}
+<div class="signalclass">
+  <div class="sc-head"><code>{{.Class}}</code>
+    {{range .Anchors}}<a class="tag" href="https://attack.mitre.org/techniques/{{.}}/">{{.}}</a>{{end}}
+  </div>
+  {{if .Counterpart}}<p class="muted sc-counterpart">{{.Counterpart}}</p>{{end}}
+</div>
+{{end}}

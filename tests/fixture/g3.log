@@ -1,0 +1,5 @@
+# QINJING start=1794818000000 host=selftest isolate=1 sleep=2 timeout=10 kernel=5.99-test distro=Test OS 7 plan=3
+1794818000000	1794818001000	T1	attack	1000	1	0	nmap -sS 203.0.113.9
+1794818002000	1794818003000	T2	attack	1000	1	0	uname -a
+1794818004000	1794818005000	T3	attack	1000	1	0	cat /etc/shadow
+# QINJING-END rows=3 transport_fail=0 rc=0

@@ -1,5 +1,5 @@
 {{define "header"}}<!DOCTYPE html>
-<html lang="en">
+<html lang="{{.Lang}}">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
@@ -10,16 +10,22 @@
 <header class="topbar">
   <div class="brand">
     <span class="brand-name">qinjing</span>
-    <span class="brand-sub">HIDS evaluation corpus · coverage dashboard</span>
+    <span class="brand-sub">{{$.T "HIDS evaluation corpus · coverage dashboard"}}</span>
   </div>
   <nav class="nav">
-    <a href="/" class="{{if eq .Active "overview"}}active{{end}}">Overview</a>
-    <a href="/coverage" class="{{if eq .Active "coverage"}}active{{end}}">Coverage</a>
-    <a href="/matrix" class="{{if eq .Active "matrix"}}active{{end}}">Matrix</a>
-    <a href="/classes" class="{{if eq .Active "classes"}}active{{end}}">Classes</a>
-    <a href="/provisioning" class="{{if eq .Active "provisioning"}}active{{end}}">Provisioning</a>
-    <a href="/scores" class="{{if eq .Active "scores"}}active{{end}}">Scores</a>
+    <a href="/" class="{{if eq .Active "overview"}}active{{end}}">{{$.T "Overview"}}</a>
+    <a href="/coverage" class="{{if eq .Active "coverage"}}active{{end}}">{{$.T "Coverage"}}</a>
+    <a href="/matrix" class="{{if eq .Active "matrix"}}active{{end}}">{{$.T "Matrix"}}</a>
+    <a href="/classes" class="{{if eq .Active "classes"}}active{{end}}">{{$.T "Classes"}}</a>
+    <a href="/cases" class="{{if eq .Active "cases"}}active{{end}}">{{$.T "Catalog"}}</a>
+    <a href="/provisioning" class="{{if eq .Active "provisioning"}}active{{end}}">{{$.T "Provisioning"}}</a>
+    <a href="/fp" class="{{if eq .Active "fp"}}active{{end}}">{{$.T "FP"}}</a>
+    <a href="/scores" class="{{if eq .Active "scores"}}active{{end}}">{{$.T "Scores"}}</a>
   </nav>
+  <span class="lang">
+    <a href="?lang=en" class="{{if eq .Lang "en"}}active{{end}}">EN</a>
+    <a href="?lang=zh" class="{{if eq .Lang "zh"}}active{{end}}">中文</a>
+  </span>
 </header>
 <main class="wrap">
 <h1 class="page-title">{{.Title}}</h1>
@@ -27,13 +33,36 @@
 
 {{define "footer"}}
 <footer class="foot">
-  <span>corpus <code>{{shortSHA .Data.Meta.CorpusSHA256}}</code></span>
-  <span>version {{.Data.Meta.Version}}</span>
-  <span>calibre {{.Data.Meta.Calibre}}</span>
+  <span>{{$.T "corpus"}} <code>{{shortSHA .Data.Meta.CorpusSHA256}}</code></span>
+  <span>{{$.T "version"}} {{.Data.Meta.Version}}</span>
+  <span>{{$.T "calibre"}} {{.Data.Meta.Calibre}}</span>
   <span>ATT&amp;CK {{.Data.Meta.AttackVersion}}</span>
-  <span class="foot-note">Corpus coverage only — not product detection scores.</span>
+  <span class="foot-note">{{$.T "Corpus coverage only — not product detection scores."}}</span>
+  <span class="foot-legal">
+    <a href="https://github.com/xycxmz/qinjing-public/blob/main/LICENSE">{{$.T "License (Apache-2.0)"}}</a> ·
+    <a href="https://github.com/xycxmz/qinjing-public/blob/main/NOTICE">{{$.T "Attributions"}}</a> ·
+    <a href="https://github.com/xycxmz/qinjing-public/blob/main/GOVERNANCE.md">{{$.T "Governance"}}</a>
+  </span>
 </footer>
 </main>
 </body>
 </html>
+{{end}}
+
+{{define "census-note"}}
+<section class="banner census">
+  <strong>{{$.T "Coverage is not a detection rate."}}</strong> {{$.T "Coverage is a census property of the corpus (what it tests, how much of ATT&CK it covers), not an estimate of any product's detection rate. A detection rate needs a real-machine run; the"}}
+  <a href="/scores">{{$.T "Scores"}}</a> {{$.T "page stays empty until one exists. There is no single total score."}}
+</section>
+{{end}}
+
+{{define "tier-legend"}}
+<div class="tierlegend">
+  <span class="tier-axis">{{$.T "More specific"}} ↔ {{$.T "Less specific"}}</span>
+  <span class="tier-swatch tier-technique"></span><span class="tier-name">{{$.T "technique"}}</span>
+  <span class="tier-swatch tier-tactic"></span><span class="tier-name">{{$.T "tactic"}}</span>
+  <span class="tier-swatch tier-general"></span><span class="tier-name">{{$.T "general"}}</span>
+  <span class="tier-swatch tier-none"></span><span class="tier-name">{{$.T "none"}}</span>
+</div>
+<p class="muted tier-axis-note">{{$.T "Detection tiers (G3) describe how specific a detection's ATT&CK context is, from technique (most specific) to none (least). They are additive and do not change the verdict."}}</p>
 {{end}}

@@ -52,3 +52,4 @@ attacks:
     bucket: chain-T
     expect: detectable
     impact: temporary
+    cleanup: rm -f /tmp/qinjing-chain.tar.gz

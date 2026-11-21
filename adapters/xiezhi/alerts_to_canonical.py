@@ -92,6 +92,26 @@ def exec_run_window(path):
     return min(starts), max(ends) + grace_ms
 
 
+def build_process(alert):
+    """C8 (xiezhi HANDOFF-C8-DELIVERY): map the product's process block, only
+    from raw fields (O6/O7, no fabrication). Absent keys stay absent; auid=-1
+    is the unset sentinel (Tier3 not captured) and is dropped, not fabricated.
+    Non-execve alerts carry no process -> None."""
+    p = alert.get("process")
+    if not isinstance(p, dict):
+        return None
+    out = {}
+    for k in ("pid", "ppid", "uid", "exe", "comm"):
+        if k in p:
+            out[k] = p[k]
+    if isinstance(p.get("argv"), list):
+        out["argv"] = list(p["argv"])
+    auid = p.get("auid")
+    if isinstance(auid, int) and auid >= 0:
+        out["auid"] = auid
+    return out or None
+
+
 def convert(dump_path, exec_log, out_path, complete):
     with open(dump_path, encoding="utf-8") as fh:
         raw = json.load(fh)
@@ -115,6 +135,12 @@ def convert(dump_path, exec_log, out_path, complete):
             raise ValueError("unknown severity %r (rule %s): must be one of"
                              " %s (policy unknown_severity=reject)"
                              % (severity, rule_id, "/".join(ALLOWED_SEVERITIES)))
+        proc = build_process(alert)
+        argv = proc.get("argv") if proc else alert.get("argv")
+        if isinstance(argv, list):
+            raw_log = " ".join(str(a) for a in argv)
+        else:
+            raw_log = str(argv or alert.get("summary", ""))
         entry = {
             "timestamp": normalize_ts(alert.get(TS_FIELD, "")),
             "event_kind": "alert",
@@ -126,9 +152,15 @@ def convert(dump_path, exec_log, out_path, complete):
             "signal_class": [signal] if signal else [],
             "event_source": EVENT_SOURCES.get(rule_id, "execve"),
             "mitre_attack": [alert["mitre"]] if alert.get("mitre") else [],
-            "raw_log": alert.get("argv", ""),
-            "event_uid": alert.get("id", ""),
+            "raw_log": raw_log,
+            # xiezhi alerts have no unique id; the ack key (ts_ms, rule_id,
+            # agent_id) is the stable identity (HANDOFF-C8-DELIVERY sec 4.2).
+            "event_uid": alert.get("id") or "%s:%s:%s"
+                         % (alert.get("ts_ms", ""), rule_id,
+                            alert.get("agent_id", "")),
         }
+        if proc:
+            entry["process"] = proc
         if entry["mitre_attack"]:
             # Labels pass through from the product's own mitre field; they
             # were not derived from the mapping table (docs/02 label_source).

@@ -24,8 +24,10 @@ from a real run's `scorer --out-json` report.
 |---|---|
 | `/` | Overview: totals, composition, provisioning summary |
 | `/coverage` | ATT&CK tactic coverage (covered vs total techniques, cases) |
-| `/matrix` | Technique heatmap (case-count overlay) + MITRE Navigator layer |
-| `/classes` | Signal-class distribution (52 classes) |
+| `/matrix` | Technique heatmap (case-count overlay) + MITRE Navigator layer + uncovered-technique contribution CTA + layer semantics legend |
+| `/classes` | Signal-class distribution (52 classes, with anchors + external counterparts) |
+| `/cases` | Case catalog (1076 cases): server-side tactic/mode/expect/platform filters, id/name/cmd search, 50-per-page pagination, filtered/total count |
+| `/case?id=X` | Case detail, four sections: ATT&CK mapping → command & execution → expected/related signals (anchors + counterparts) → detection & contribution. gap/silent disclosed honestly; unknown id → 404 |
 | `/provisioning` | Reference-bench evaluability (52 / 14 / 21 disclosure) |
 | `/scores` | Product scores framework (empty until a real run exists) |
 | `/layer.json` | ATT&CK Navigator layer (load into Navigator) |
@@ -59,6 +61,19 @@ regeneration is byte-identical. The selftest gate asserts this and reconciles
 the key numbers against `parse.py --stats`, coverage and provisioning. The
 corpus sha256 + version + ATT&CK version fully identify the data.
 
+For the case catalog the generator also emits `cases[]` (one row
+per corpus case, cmd included), `uncovered[]` (matrix techniques with no case,
+the gap-contribution targets), and per-class `anchors` (from
+`data/vocab-anchors.tsv`) + `counterpart` (the external Sigma/Elastic/Wazuh
+correspondence from `data/class-counterparts.tsv`).
+
+**Public safety**: the dashboard is public, so before writing the artifact the
+generator runs a sensitive scan (RFC1918 addresses, local repo paths, credential
+material) over the serialized bytes and fails loud on any hit. It targets real
+secrets, not corpus vocabulary — `grep AKIA`, `BEGIN.*PRIVATE` and sudoers
+`NOPASSWD: /bin/bash` lines are legitimate attack content and are excluded. The
+selftest re-runs the scan on both the artifact and the served HTML pages.
+
 ## Test
 
 ```sh
@@ -70,6 +85,15 @@ hold: empty `runs[]` → placeholder (no badge); a synthetic run → labelled
 `SYNTHETIC DEMO`; a real run → no badge; an INTERRUPTED run → disclosed as not
 publishable; nullable rates render `N/A` (never coerced to 0%); and the
 committed `dashboard_data.json` parses with empty runs.
+
+The P2 tests prove the catalog and detail behavior through the real mux: the
+filter contract (each constraint, combined, empty = exact zero), pagination
+boundaries + over-range clamp, catalog counts (1076 / 21 gap / 120 benign),
+case-insensitive search, the four detail sections (ATT&CK link, cmd, signal
+anchors + counterpart, contribution), gap/silent disclosure, unknown-id 404,
+the matrix uncovered-technique CTA + Navigator legend, and uncovered
+reconciliation (625, covered + uncovered = 706, disjoint). The selftest
+additionally renders these pages over HTTP and scans the served bytes.
 
 ## Hosting
 

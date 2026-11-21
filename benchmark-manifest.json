@@ -1,11 +1,11 @@
 {
   "benchmark": "qinjing",
-  "frozen_at": "2026-11-19T17:57:05+08:00",
+  "frozen_at": "2026-11-21T13:30:14+08:00",
   "corpus": {
-    "sha256": "6688605d2afa9d321b4fc28937218f052fc4b89167b0c6c1ff9e7e2e8235df8e",
-    "cases": 1075,
+    "sha256": "e6af92bc0c9c4db572a2a8b26118894add1bc06f30e4c4eb00301c837ba454fe",
+    "cases": 1076,
     "fp": 120,
-    "attack": 955,
+    "attack": 956,
     "signal_classes": 52
   },
   "matrix": {
@@ -14,7 +14,7 @@
     "source": "mitre-attack/attack-stix-data tag v20.1 (MITRE custom license, see NOTICE)"
   },
   "scorer": {
-    "sha256": "713a92497ec1b643dee8d3cf29b0f488c5d468fd296b5544862803b1430c4032",
+    "sha256": "0781b8bbd45c1d3245c706386f3d5b651c7f82a92174b2083f3632d41c4e469d",
     "calibre": "v2.2"
   },
   "adapter": {
@@ -27,6 +27,13 @@
     "grace_ms": 3500,
     "tolerance_ms": 2500,
     "stray_margin_ms": 60000
+  },
+  "fair_config": {
+    "profile": "default",
+    "reference_env": "CentOS-7-style minimal bench (data/provisioning.tsv)",
+    "applicable_scope": "14 classes evaluable on the reference bench; 21 service-dependent counted apart; 5 sim-only never evaluable there",
+    "ruleset": "adapters/xiezhi/rule_map.json (sha under adapter.rule_map_sha)",
+    "discipline": "profile and applicable scope frozen at freeze time; never changed post-hoc after seeing results (docs/11 C9)"
   },
   "secondary_anchors": {
     "file": "data/secondary-anchors.tsv",

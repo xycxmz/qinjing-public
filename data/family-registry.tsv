@@ -1080,3 +1080,4 @@ HW11	cloud_metadata_access	handwritten	-
 HW12	sudoers_change	handwritten	-
 LT03	valid_account_remote_login	ta0008-r1	-
 LT04	exfil_transfer	ta0008-r1	-
+CAL03	gap_no_class	caldera_import	-

@@ -1,70 +1,118 @@
 {{template "header" .}}
 {{$d := .Data}}
+{{$s := .Scores}}
 <section class="banner">
-  <strong>Product scores require real-machine measurement.</strong> A score needs a real HIDS run on a real
-  machine plus an adapter mapping its alerts to the canonical signal classes. Real-machine runs are currently
-  suspended, so this page records <strong>{{len $d.Runs}} run{{if ne (len $d.Runs) 1}}s{{end}}</strong>.
-  No synthetic number is ever presented as a real product result.
+  <strong>{{$.T "Product scores require real-machine measurement."}}</strong> {{$.T "A score needs a real HIDS run on a real machine plus an adapter mapping its alerts to the canonical signal classes. Real-machine runs are currently suspended, so this page records"}} <strong>{{len $d.Runs}} {{$.T "run"}}{{if ne (len $d.Runs) 1}}{{$.T "s"}}{{end}}</strong>{{$.T ". No synthetic number is ever presented as a real product result."}}
+</section>
+
+<section class="banner compare">
+  <strong>{{$.T "Runs are comparable only within the same version and environment."}}</strong>
+  {{$.T "Do not directly compare runs with a different corpus sha, calibre, target, or case set. Any byte change in the corpus, exec log, or alerts (the corpus-sha256 / exec-log-sha256 / alerts-sha256 triple) is a different input and must not be mixed (docs/03 D9). Read every comparison in the context of its scope, methodology, and environment (MITRE Eval); cross-platform results are not comparable (DARPA TC); a version change is archived separately, not merged (HF Open LLM Leaderboard v1 to v2)."}}
+  {{$.T "Versions are pinned:"}} <code>{{$.T "version"}} {{$d.Meta.Version}}</code> · <code>ATT&amp;CK {{$d.Meta.AttackVersion}}</code> · <code>{{$.T "calibre"}} {{$d.Meta.Calibre}}</code>.
 </section>
 
 {{if not $d.Runs}}
 <section class="panel empty">
-  <h2>Pending real-machine measurement</h2>
-  <p class="muted">When a real run exists, its <code>scorer --out-json</code> report lands in <code>runs[]</code>
-    and this page will show, per product and per run:</p>
+  <h2>{{$.T "Pending real-machine measurement"}}</h2>
+  <p class="muted">{{$.T "When a real run exists, its"}} <code>scorer --out-json</code> {{$.T "report lands in"}} <code>runs[]</code>
+    {{$.T "and this page will show, per product and per run:"}}</p>
   <ul class="links">
-    <li>Detection rate — signal-class primary column + any-hit fallback, by class and tactic.</li>
-    <li>False-positive rate — verified / attempt tiers (calibre {{$d.Meta.Calibre}}).</li>
-    <li>Per-class hit heatmap and median latency (attribution-window calibre, not true MTTD).</li>
-    <li>Multi-product comparison on the same environment and case set.</li>
+    <li>{{$.T "Detection rate — signal-class primary column + any-hit fallback, by class and tactic."}}</li>
+    <li>{{$.T "False-positive rate — verified / attempt tiers (calibre"}} {{$d.Meta.Calibre}}{{$.T ")."}}</li>
+    <li>{{$.T "Per-class hit heatmap and median latency (attribution-window calibre, not true MTTD)."}}</li>
+    <li>{{$.T "Multi-product comparison on the same environment and case set."}}</li>
   </ul>
-  <p class="muted">Every number carries its run metadata (corpus sha, calibre, target, timestamp).
-    Any synthetic data used for UI debugging is labelled <code>SYNTHETIC DEMO</code>.</p>
+  <p class="muted">{{$.T "Every number carries its run metadata (corpus sha, calibre, target, timestamp). Any synthetic data used for UI debugging is labelled"}} <code>{{$.T "SYNTHETIC DEMO"}}</code>{{$.T "."}}</p>
 </section>
 {{else}}
-{{range $d.Runs}}
-<section class="panel runcard{{if .Synthetic}} synthetic{{end}}">
+{{if $s.Archived}}
+<section class="banner archive">
+  <strong>{{$s.Archived}} {{$.T "retired run"}}{{if ne $s.Archived 1}}{{$.T "s"}}{{end}} {{$.T "archived."}}</strong>
+  {{$.T "Archived runs are kept, not deleted (HF Archived). They are hidden by default."}}
+  {{if $s.ShowDeprecated}}<a href="/scores">{{$.T "Hide archived runs"}}</a>{{else}}<a href="/scores?show_deprecated=1">{{$.T "Show archived runs"}}</a>{{end}}
+</section>
+{{end}}
+{{if not $s.Runs}}
+<section class="panel empty">
+  <p class="muted">{{$.T "All recorded runs are archived and hidden by default."}} <a href="/scores?show_deprecated=1">{{$.T "Show archived runs"}}</a></p>
+</section>
+{{end}}
+{{range $s.Groups}}
+<h2 class="version-head">{{if .Version}}{{$.T "Version"}} {{.Version}}{{else}}{{$.T "Unversioned runs"}}{{end}}</h2>
+{{range .Runs}}
+<section class="panel runcard{{if .Synthetic}} synthetic{{end}}{{if .Deprecated}} archived{{end}}">
   <div class="run-head">
-    <h2>{{if .Product}}{{.Product}}{{else}}unnamed product{{end}}</h2>
-    {{if .Synthetic}}<span class="demo-badge">SYNTHETIC DEMO — not a real product result</span>{{end}}
+    <h2>{{if .Product}}{{.Product}}{{else}}{{$.T "unnamed product"}}{{end}}</h2>
+    {{if .Synthetic}}<span class="demo-badge">{{$.T "SYNTHETIC DEMO — not a real product result"}}</span>{{end}}
+    {{if .Deprecated}}<span class="archived-badge">{{$.T "ARCHIVED — retired, kept for reference"}}</span>{{end}}
   </div>
   <p class="muted run-meta">
-    {{if .RunID}}run <code>{{.RunID}}</code> · {{end}}
+    {{if .RunID}}{{$.T "run"}} <code>{{.RunID}}</code> · {{end}}
     {{if .Timestamp}}{{.Timestamp}} · {{end}}
-    corpus <code>{{shortSHA .Meta.CorpusSHA256}}</code> ·
-    calibre {{.Meta.Calibre}} ·
-    target {{.Meta.TargetKernel}} / {{.Meta.TargetDistro}}
-    {{if .Meta.Host}} · host {{.Meta.Host}}{{end}}
+    {{$.T "corpus"}} <code>{{shortSHA .Meta.CorpusSHA256}}</code> ·
+    {{$.T "calibre"}} {{.Meta.Calibre}} ·
+    {{$.T "target"}} {{.Meta.TargetKernel}} / {{.Meta.TargetDistro}}
+    {{if .Meta.Host}} · {{$.T "host"}} {{.Meta.Host}}{{end}}
   </p>
+  {{if .Modifiers}}
+  <p class="modifiers">{{$.T "modifiers:"}} {{range .Modifiers}}<span class="tag warn">{{.}}</span> {{end}}</p>
+  {{end}}
   {{if ne .Meta.RunKind "COMPLETE"}}
-  <p class="warn-line">run kind is {{.Meta.RunKind}} — not a complete, publishable run.</p>
+  <p class="warn-line">{{$.T "run kind is"}} {{.Meta.RunKind}} {{$.T "— not a complete, publishable run."}}</p>
+  {{end}}
+
+  {{if or .ArtifactReport .ArtifactExecLog .ArtifactAlerts}}
+  <div class="evidence">
+    <h3>{{$.T "Raw evidence"}}</h3>
+    <ul class="links">
+      {{if .ArtifactReport}}<li><a href="{{.ArtifactReport}}">{{$.T "Raw report (markdown, carries the input sha triple)"}}</a></li>{{end}}
+      {{if .ArtifactExecLog}}<li><a href="{{.ArtifactExecLog}}">{{$.T "Exec log"}}</a></li>{{end}}
+      {{if .ArtifactAlerts}}<li><a href="{{.ArtifactAlerts}}">{{$.T "Alerts"}}</a></li>{{end}}
+    </ul>
+  </div>
   {{end}}
 
   <div class="cols">
     <div>
-      <h3>Detection</h3>
+      <h3>{{$.T "Detection"}}</h3>
       <table class="kv">
-        <tr><td>signal rate (≥1 expected)</td><td class="num">{{.Detection.Hit}}/{{.Detection.Detectable}} = {{fmtRate .Detection.SignalRate}}</td></tr>
-        <tr><td>strict (all expected)</td><td class="num">{{.Detection.Strict}}/{{.Detection.Detectable}} = {{fmtRate .Detection.StrictRate}}</td></tr>
-        <tr><td>any-hit (fallback)</td><td class="num">{{.Detection.Anyhit}}/{{.Detection.Detectable}} = {{fmtRate .Detection.AnyhitRate}}</td></tr>
-        <tr><td>not-run excluded</td><td class="num">{{.Detection.Notrun}}</td></tr>
-        <tr><td>transport-invalid</td><td class="num">{{.Detection.TransportInvalid}}</td></tr>
+        <tr><td>{{$.T "signal rate (≥1 expected)"}}</td><td class="num">{{.Detection.Hit}}/{{.Detection.Detectable}} = {{fmtRate .Detection.SignalRate}}</td></tr>
+        <tr><td>{{$.T "signal rate 95% exact CI"}}</td><td class="num">{{fmtCI .Detection.SignalCI95}}</td></tr>
+        <tr><td>{{$.T "strict (all expected)"}}</td><td class="num">{{.Detection.Strict}}/{{.Detection.Detectable}} = {{fmtRate .Detection.StrictRate}}</td></tr>
+        <tr><td>{{$.T "any-hit (fallback)"}}</td><td class="num">{{.Detection.Anyhit}}/{{.Detection.Detectable}} = {{fmtRate .Detection.AnyhitRate}}</td></tr>
+        <tr><td>{{$.T "not-run excluded"}}</td><td class="num">{{.Detection.Notrun}}</td></tr>
+        <tr><td>{{$.T "transport-invalid"}}</td><td class="num">{{.Detection.TransportInvalid}}</td></tr>
+        <tr><td>{{$.T "not-measured (surface unexported)"}}</td><td class="num">{{.Detection.NotMeasured}}</td></tr>
       </table>
     </div>
     <div>
-      <h3>False positives</h3>
+      <h3>{{$.T "False positives"}}</h3>
       <table class="kv">
-        <tr><td>FP rate (verified)</td><td class="num">{{fmtRate .FP.VerifiedRate}}</td></tr>
-        <tr><td>FP rate (all attempts)</td><td class="num">{{fmtRate .FP.AttemptRate}}</td></tr>
-        <tr><td>verified / attempt / legacy</td><td class="num">{{.FP.Verified}} / {{.FP.Attempt}} / {{.FP.Legacy}}</td></tr>
-        <tr><td>violations (verified)</td><td class="num">{{.FP.Violations}} ({{.FP.ViolationsVerified}})</td></tr>
+        <tr><td>{{$.T "FP rate (verified)"}}</td><td class="num">{{fmtRate .FP.VerifiedRate}}</td></tr>
+        <tr><td>{{$.T "FP rate (all attempts)"}}</td><td class="num">{{fmtRate .FP.AttemptRate}}</td></tr>
+        <tr><td>{{$.T "FP one-sided 95% upper"}}</td><td class="num">{{fmtRate .FP.AttemptUpper95}}</td></tr>
+        <tr><td>{{$.T "verified / attempt / legacy"}}</td><td class="num">{{.FP.Verified}} / {{.FP.Attempt}} / {{.FP.Legacy}}</td></tr>
+        <tr><td>{{$.T "violations (verified)"}}</td><td class="num">{{.FP.Violations}} ({{.FP.ViolationsVerified}})</td></tr>
       </table>
     </div>
   </div>
 
-  <h3>Per-class detection</h3>
+  <table class="kv run-context">
+    <tr><td>{{$.T "Run duration"}}</td><td class="num">{{if .DurationMs}}{{fmtDuration .DurationMs}}{{else}}{{$.T "not recorded"}}{{end}}</td></tr>
+    <tr><td>{{$.T "Label source (native / adapter / reviewer)"}}</td><td class="num">{{if .LabelSourceCounts}}{{range $k, $v := .LabelSourceCounts}}{{$k}}={{$v}} {{end}}{{else}}{{$.T "not recorded"}}{{end}}</td></tr>
+  </table>
+
+  <div class="disclosure">
+    <h3>{{$.T "Statistical disclosure"}}</h3>
+    <p class="muted">{{$.T "Latency:"}} {{.Latency.Subset}} {{$.T "subset,"}} {{.Latency.Calibre}}{{$.T "; negative latencies dropped:"}} {{.Latency.NegativeDropped}}{{$.T ". Micro signal rate"}} {{fmtRate .Aggregation.MicroSignalRate}} {{$.T "/ macro"}}
+      {{fmtRate .Aggregation.MacroSignalRate}}{{$.T "."}} {{.Aggregation.Note}}{{$.T ". Cases are correlated (generated variants, single-family benign personas); effective sample size < case count; repeated runs are not independent, so binomial intervals are optimistic. Do not extrapolate operational alert burden from the benign ratio. Strict process view (C8): coherent"}} {{.Strict.Coherent}} {{$.T "/ incoherent"}}
+      {{.Strict.Incoherent}} {{$.T "/ unattributable"}} {{.Strict.Unattributable}}{{$.T "; auid available:"}} {{.Strict.AuidAvailable}}{{$.T "."}} {{.Strict.Note}}
+      {{$.T "Detection tiers (G3)"}}: <span class="tier-swatch tier-technique"></span>{{$.T "technique"}} {{index .Tiers.Totals "technique"}} / <span class="tier-swatch tier-tactic"></span>{{$.T "tactic"}} {{index .Tiers.Totals "tactic"}} / <span class="tier-swatch tier-general"></span>{{$.T "general"}} {{index .Tiers.Totals "general"}} / <span class="tier-swatch tier-none"></span>{{$.T "none"}} {{index .Tiers.Totals "none"}}.</p>
+  </div>
+
+  <h3>{{$.T "Per-class detection"}}</h3>
   <table class="grid">
-    <thead><tr><th>Class</th><th class="num">Cases</th><th class="num">Detected</th><th class="num">Missed</th><th class="num">Hit rate</th><th class="num">Med lat (ms)</th><th class="num">Tech-tag</th></tr></thead>
+    <thead><tr><th>{{$.T "Class"}}</th><th class="num">{{$.T "Cases"}}</th><th class="num">{{$.T "Detected"}}</th><th class="num">{{$.T "Missed"}}</th><th class="num">{{$.T "NotMeas"}}</th><th class="num">{{$.T "Hit rate"}}</th><th class="num">{{$.T "Hit 95% CI"}}</th><th class="num">{{$.T "Med lat (ms)"}}</th><th class="num">{{$.T "Lat n / neg"}}</th><th class="num">{{$.T "Tech-tag"}}</th></tr></thead>
     <tbody>
     {{range .PerClass}}
       <tr>
@@ -72,15 +120,62 @@
         <td class="num">{{.Cases}}</td>
         <td class="num">{{.Detected}}</td>
         <td class="num">{{.Missed}}</td>
+        <td class="num">{{.NotMeasured}}</td>
         <td class="num">{{pct .Detected .Cases}}%</td>
+        <td class="num">{{fmtCI .HitCI95}}</td>
         <td class="num">{{fmtMs .MedianLatencyMs}}</td>
+        <td class="num">{{.LatencyN}} / {{.NegativeDropped}}</td>
         <td class="num">{{.TechTagged}}</td>
       </tr>
     {{end}}
     </tbody>
   </table>
-  <p class="muted">Latency is the attribution-window calibre (alert time minus case start), not true MTTD.</p>
+  <p class="muted">{{$.T "Latency is the attribution-window calibre (alert time minus case start) over the HIT subset only, not true MTTD; negative latencies are dropped and counted."}}</p>
 </section>
 {{end}}
 {{end}}
+{{end}}
+
+<section class="panel">
+  <h2>{{$.T "Precision versus false-positive rate"}}</h2>
+  <p class="muted">{{$.T "One point per run: x is the false-positive rate (all attempts), y is precision = detected / (detected + FP violations). Read both axes together rather than ranking on one; the ideal corner is top-left (high precision, low FPR). Synthetic points are marked."}}</p>
+  {{scatterSVG $s.Runs $.Lang}}
+</section>
+
+<section class="panel">
+  <h2>{{$.T "FPR heatmap"}}</h2>
+  <p class="muted">{{$.T "Per-class false-positive rate by run, sorted by mean (worst first). Color bands run from low FPR (light) to high FPR (deep); N/A means the run did not measure that class."}}</p>
+  <div class="fprlegend">
+    <span class="fpr-0 swatch"></span> 0%
+    <span class="fpr-1 swatch"></span> &le;5%
+    <span class="fpr-2 swatch"></span> &le;20%
+    <span class="fpr-3 swatch"></span> &gt;20%
+    <span class="fpr-dir">{{$.T "lower FPR is better"}}</span>
+  </div>
+  {{fprHeatmap $s.Runs $.Lang}}
+</section>
+
+<section class="panel methodology">
+  <h2>{{$.T "Statistical methodology"}}</h2>
+  <h3>{{$.T "Exact binomial intervals"}}</h3>
+  <p class="muted">{{$.T "Every rate carries a 95% Clopper-Pearson exact interval computed from the beta distribution (no normal approximation). Detection rates use a two-sided interval; the false-positive rate uses a one-sided 95% upper bound. A 0-FP run is not a zero-width interval: 0/120 still reads as <= 2.47% at 95% confidence."}}</p>
+  <h3>{{$.T "Independence limitation"}}</h3>
+  <p class="muted">{{$.T "These intervals assume independent Bernoulli trials. Corpus cases are correlated (generated variants, single-family benign personas), so the effective sample size is smaller than the case count and repeated runs are not independent. The intervals are therefore optimistic; treat them as bounds on this corpus, not on operational deployment."}}</p>
+  <h3>{{$.T "No total score"}}</h3>
+  <p class="muted">{{$.T "Micro (pooled over all class instances) and macro (mean of per-class rates) are side-by-side views with no natural total score. They weight classes differently and must not be collapsed into a single ranking number."}}</p>
+  <h3>{{$.T "Precision versus false-positive rate"}}</h3>
+  <p class="muted">{{$.T "Precision = detected attack cases / (detected + FP violations); FPR = FP violations / evaluable benign cases. A high detection rate can coexist with a high FPR, so a precision-FPR scatter reads both axes together rather than ranking on one. The ideal corner is high precision and low FPR (top-left)."}}</p>
+  <h3>{{$.T "Reproducibility and the input triple"}}</h3>
+  <p class="muted">{{$.T "Every run links its raw evidence: the markdown report (which carries the corpus-sha256 / exec-log-sha256 / alerts-sha256 triple), the exec log, and the alerts. The triple pins the exact input bytes (docs/03 D9, hash-must-cite): a change to any byte of the corpus, exec log, or alerts is a different input and must not be mixed. Re-running the same triple under a different scorer calibre reproduces the cross-calibre comparison, and the raw report lets a reader verify every number against the same bytes (HF Open LLM Leaderboard per-model detail)."}}</p>
+  <h3>{{$.T "Version governance and archiving"}}</h3>
+  <p class="muted">{{$.T "Run history is grouped by benchmark version. A version change (corpus sha, calibre, or attack matrix) is a new measurement context, so runs from different versions are archived separately rather than merged into one ranking (HF v1 to v2). Retired runs are archived, not deleted: the data stays available, marked deprecated and hidden by default, with a Show archived toggle (HF Archived; LMArena Show Deprecated)."}}</p>
+  <h3>{{$.T "Label source"}}</h3>
+  <p class="muted">{{$.T "Each detection label carries its source: native (the product's own annotation, passed through), adapter (derived from the adapter's rule mapping table), or reviewer (a human-added label). The Tech-tag column counts native labels only (the C4 contract, already disclosed); adapter and reviewer labels never earn Tech-tag credit. The scorer does not emit per-source counts yet, so the run-card breakdown stays empty until a run ingestion fills it."}}</p>
+  <h3>{{$.T "Run modifiers"}}</h3>
+  <p class="muted">{{$.T "A run may carry modifiers that change how its results should be read, such as Configuration Change (the product settings were altered mid-evaluation) or Delayed (results collected after a delay). Modifiers are disclosed beside the run, not folded into the score (MITRE Eval Initial Run vs Configuration Change). The calibre tag (the medium or high severity gate) is the primary comparability label."}}</p>
+  <h3>{{$.T "Cost and latency"}}</h3>
+  <p class="muted">{{$.T "A run may record its wall-clock duration so detection quality can be read beside its cost (HIDBench cost table; HF CO2; LMArena tokens). Duration is a forward-compatible slot, empty until recorded. Latency is the attribution-window proxy (alert time minus case start) over the HIT subset only, not true MTTD; negative latencies are dropped and counted. It is not a real-time detector latency."}}</p>
+  <h3>{{$.T "Detection tiers (G3)"}}</h3>
+  {{template "tier-legend" .}}
+</section>
 {{template "footer" .}}

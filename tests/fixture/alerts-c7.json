@@ -1,0 +1,28 @@
+{
+ "fetch": {
+  "source": "synthetic-c7-fixture",
+  "window_lo_ms": 1794818000000,
+  "window_hi_ms": 1794818006500,
+  "count": 1,
+  "complete": true
+ },
+ "alerts": [
+  {
+   "timestamp": "2026-11-16T08:33:22.900Z",
+   "source_event_time": "2026-11-16T08:33:22.500Z",
+   "event_kind": "alert",
+   "rule_id": "exec-recon-nmap",
+   "rule_name": "external network scan",
+   "severity_native": "high",
+   "severity_scale": "xiezhi",
+   "severity": "high",
+   "signal_class": ["net_scan_external"],
+   "event_source": "execve",
+   "mitre_attack": ["T1046"],
+   "label_source": "native",
+   "host": {"id": "h1", "name": "selftest"},
+   "raw_log": "nmap -sS 203.0.113.9",
+   "event_uid": "c7-1"
+  }
+ ]
+}

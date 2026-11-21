@@ -1,44 +1,44 @@
 {{template "header" .}}
 {{$d := .Data}}
 <section class="banner">
-  <strong>What this dashboard shows.</strong> Every number is a measured property of the
-  <em>corpus itself</em> — what it tests and how much of ATT&amp;CK it covers. No HIDS product
-  has been run on a real machine yet, so there are <strong>no product detection scores</strong> here.
-  The <a href="/scores">Scores</a> page stays empty until a real run exists; synthetic data is never shown as real.
+  <strong>{{$.T "What this dashboard shows."}}</strong> {{$.T "Every number is a measured property of the"}}
+  <em>{{$.T "corpus itself"}}</em> {{$.T "— what it tests and how much of ATT&CK it covers. No HIDS product has been run on a real machine yet, so there are"}} <strong>{{$.T "no product detection scores"}}</strong> {{$.T "here. The"}}
+  <a href="/scores">{{$.T "Scores"}}</a> {{$.T "page stays empty until a real run exists; synthetic data is never shown as real."}}
 </section>
+{{template "census-note" .}}
 
 <section class="cards">
-  <div class="card"><div class="card-num">{{$d.Totals.Cases}}</div><div class="card-label">total cases</div></div>
-  <div class="card"><div class="card-num">{{$d.Totals.Attack}}</div><div class="card-label">attack cases</div></div>
-  <div class="card"><div class="card-num">{{$d.Totals.FP}}</div><div class="card-label">benign (FP) cases</div></div>
-  <div class="card"><div class="card-num">{{$d.Totals.Classes}}</div><div class="card-label">signal classes</div></div>
-  <div class="card"><div class="card-num">{{$d.Meta.TechniquesCovered}}<span class="card-den">/ {{$d.Meta.MatrixTechniques}}</span></div><div class="card-label">ATT&amp;CK techniques covered</div></div>
-  <div class="card"><div class="card-num">{{len $d.TacticCoverage}}</div><div class="card-label">tactics</div></div>
+  <div class="card"><div class="card-num">{{$d.Totals.Cases}}</div><div class="card-label">{{$.T "total cases"}}</div></div>
+  <div class="card"><div class="card-num">{{$d.Totals.Attack}}</div><div class="card-label">{{$.T "attack cases"}}</div></div>
+  <div class="card"><div class="card-num">{{$d.Totals.FP}}</div><div class="card-label">{{$.T "benign (FP) cases"}}</div></div>
+  <div class="card"><div class="card-num">{{$d.Totals.Classes}}</div><div class="card-label">{{$.T "signal classes"}}</div></div>
+  <div class="card"><div class="card-num">{{$d.Meta.TechniquesCovered}}<span class="card-den">/ {{$d.Meta.MatrixTechniques}}</span></div><div class="card-label">{{$.T "ATT&CK techniques covered"}}</div></div>
+  <div class="card"><div class="card-num">{{len $d.TacticCoverage}}</div><div class="card-label">{{$.T "tactics"}}</div></div>
 </section>
 
 <section class="panel">
-  <h2>Composition</h2>
+  <h2>{{$.T "Composition"}}</h2>
   <div class="cols">
     <div>
-      <h3>Attack expectation</h3>
+      <h3>{{$.T "Attack expectation"}}</h3>
       <table class="kv">
-        <tr><td>detectable</td><td class="num">{{$d.Totals.AttackExpect.detectable}}</td></tr>
-        <tr><td>gap (expected blind spot)</td><td class="num">{{$d.Totals.AttackExpect.gap}}</td></tr>
-        <tr><td>no signal class (outside class table)</td><td class="num">{{$d.Totals.AttackNoClass}}</td></tr>
+        <tr><td>{{$.T "detectable"}}</td><td class="num">{{$d.Totals.AttackExpect.detectable}}</td></tr>
+        <tr><td>{{$.T "gap (expected blind spot)"}}</td><td class="num">{{$d.Totals.AttackExpect.gap}}</td></tr>
+        <tr><td>{{$.T "no signal class (outside class table)"}}</td><td class="num">{{$d.Totals.AttackNoClass}}</td></tr>
       </table>
     </div>
     <div>
-      <h3>Impact</h3>
+      <h3>{{$.T "Impact"}}</h3>
       <table class="kv">
-        <tr><td>none</td><td class="num">{{$d.Totals.Impact.none}}</td></tr>
-        <tr><td>temporary</td><td class="num">{{$d.Totals.Impact.temporary}}</td></tr>
-        <tr><td>destructive</td><td class="num">{{$d.Totals.Impact.destructive}}</td></tr>
+        <tr><td>{{$.T "none"}}</td><td class="num">{{$d.Totals.Impact.none}}</td></tr>
+        <tr><td>{{$.T "temporary"}}</td><td class="num">{{$d.Totals.Impact.temporary}}</td></tr>
+        <tr><td>{{$.T "destructive"}}</td><td class="num">{{$d.Totals.Impact.destructive}}</td></tr>
       </table>
     </div>
     <div>
-      <h3>Execution mode</h3>
+      <h3>{{$.T "Execution mode"}}</h3>
       <table class="kv">
-        <tr><td>real</td><td class="num">{{$d.Totals.Modes.real}}</td></tr>
+        <tr><td>{{$.T "real"}}</td><td class="num">{{$d.Totals.Modes.real}}</td></tr>
         <tr><td>sim-missing-bin</td><td class="num">{{index $d.Totals.Modes "sim-missing-bin"}}</td></tr>
         <tr><td>sim-builtin</td><td class="num">{{index $d.Totals.Modes "sim-builtin"}}</td></tr>
       </table>
@@ -47,21 +47,20 @@
 </section>
 
 <section class="panel">
-  <h2>Reference-bench provisioning</h2>
-  <p class="muted">Of the {{$d.Provisioning.CorpusClasses}} corpus signal classes,
-    <strong>{{$d.Provisioning.EvaluableRef}}</strong> are evaluable on the minimal reference bench
-    (every case's binary present) and <strong>{{$d.Provisioning.ServiceDep}}</strong> additionally need a
-    reachable remote peer. <a href="/provisioning">Per-class detail →</a></p>
+  <h2>{{$.T "Reference-bench provisioning"}}</h2>
+  <p class="muted">{{$.T "Of the"}} {{$d.Provisioning.CorpusClasses}} {{$.T "corpus signal classes,"}}
+    <strong>{{$d.Provisioning.EvaluableRef}}</strong> {{$.T "are evaluable on the minimal reference bench (every case's binary present) and"}} <strong>{{$d.Provisioning.ServiceDep}}</strong> {{$.T "additionally need a reachable remote peer."}} <a href="/provisioning">{{$.T "Per-class detail →"}}</a></p>
 </section>
 
 <section class="panel">
-  <h2>Explore</h2>
+  <h2>{{$.T "Explore"}}</h2>
   <ul class="links">
-    <li><a href="/coverage">Tactic coverage</a> — covered vs total techniques per ATT&amp;CK tactic.</li>
-    <li><a href="/matrix">Technique heatmap</a> — case-count overlay; open the full matrix in MITRE Navigator.</li>
-    <li><a href="/classes">Signal classes</a> — case distribution across the {{$d.Totals.Classes}} classes.</li>
-    <li><a href="/provisioning">Provisioning</a> — what the reference bench can evaluate.</li>
-    <li><a href="/scores">Product scores</a> — pending real-machine runs ({{len $d.Runs}} runs recorded).</li>
+    <li><a href="/coverage">{{$.T "Tactic coverage"}}</a> {{$.T "— covered vs total techniques per ATT&CK tactic."}}</li>
+    <li><a href="/matrix">{{$.T "Technique heatmap"}}</a> {{$.T "— case-count overlay; open the full matrix in MITRE Navigator."}}</li>
+    <li><a href="/classes">{{$.T "Signal classes"}}</a> {{$.T "— case distribution across the"}} {{$d.Totals.Classes}} {{$.T "classes."}}</li>
+    <li><a href="/cases">{{$.T "Case catalog"}}</a> {{$.T "— browse every case with server-side filters and search."}}</li>
+    <li><a href="/provisioning">{{$.T "Provisioning"}}</a> {{$.T "— what the reference bench can evaluate."}}</li>
+    <li><a href="/scores">{{$.T "Product scores"}}</a> {{$.T "— pending real-machine runs ("}}{{len $d.Runs}} {{$.T "runs recorded)."}}</li>
   </ul>
 </section>
 {{template "footer" .}}

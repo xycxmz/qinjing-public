@@ -1,0 +1,9 @@
+# QINJING start=1794818000000 host=selftest isolate=1 sleep=2 timeout=10 marker=0 plan=7 subset=FP04,FP20,FP116,FP117,FP118,FP119,FP120 kernel=5.99-test distro=Test OS 7 seed=none order_sha=t7fixture state=cold round=1 reset=104 log_loss=na
+1794818001000	1794818002000	FP04	fp	0	1	7	curl --max-time 3 http://localhost/healthz
+1794818003000	1794818004000	FP20	fp	0	0	127	nc -z -w 2 127.0.0.1 22
+1794818005000	1794818006000	FP116	fp	0	1	7	curl -sf --max-time 3 http://127.0.0.1:8080/healthz
+1794818007000	1794818008000	FP117	fp	0	1	7	set -o pipefail; curl -s --max-time 3 http://127.0.0.1:9100/metrics | head -5
+1794818009000	1794818010000	FP118	fp	0	1	7	curl -s --max-time 3 http://127.0.0.1:9200/_cluster/health
+1794818011000	1794818012000	FP119	fp	0	0	127	nc -z -w 2 127.0.0.1 443
+1794818013000	1794818014000	FP120	fp	0	0	127	nc -z -w 2 127.0.0.1 3306
+# QINJING-END rows=7 transport_fail=0 rc=0

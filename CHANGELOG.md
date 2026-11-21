@@ -1,5 +1,31 @@
 # Changelog
 
+## 2026.11.2 (2026-11-21)
+
+Dashboard P0-P3 presentation round and corpus sync. The corpus advances
+to the CAL03-merged state (1076 cases = 120 fp + 956 attack, corpus
+sha256 e6af92bc…, 81/706 techniques); no scoring semantics change.
+
+### Added
+- `/cases`: case catalog with server-side filter, search, and pagination.
+- `/case?id=`: per-case detail (command, expectation profile, anchors,
+  external counterparts, adapter rule mapping).
+- `/fp`: benign sub-family census plus the tight-window false-positive
+  method and its trade-offs.
+- `dashboard/charts.go`: precision-FPR scatter and FPR heatmap,
+  server-rendered SVG, no JavaScript.
+- `tools/stats.py` (exact binomial bounds), `tools/observation_lint.py`
+  (observation contract), `tools/import_caldera.py` (CALDERA/stockpile
+  proposal import); class counterparts fixed up as
+  `data/class-counterparts.tsv`.
+
+### Changed
+- Scores page honesty pass: census banner, per-class denominator
+  transparency, cross-version non-comparability banner, version
+  governance archiving, and reproducibility evidence links.
+- T6/T7 corpus hygiene: real-mode scratch writes carry cleanup fields;
+  benign verify_rc values recorded from real-machine checks.
+
 ## 2026.11.1 (2026-11-20)
 
 Coverage dashboard and corpus dedup rework. Case count, class count, and

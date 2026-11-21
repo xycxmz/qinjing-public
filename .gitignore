@@ -18,6 +18,7 @@ Thumbs.db
 # dashboard build artifact (Go binary + go-build backups; source + data committed)
 dashboard/dashboard
 dashboard/dashboard.exe*
+dashboard/deploy/qinjing-dashboard-linux
 
 # analysis scratch: keep audit-*.md evidence reports, ignore scripts/outputs
 .analysis/*.py

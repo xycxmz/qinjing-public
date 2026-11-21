@@ -1,0 +1,102 @@
+{{template "header" .}}
+{{$d := .Data}}
+{{$v := .FP}}
+<section class="banner">
+  <strong>{{$.T "False-positive measurement is qinjing's core differentiation."}}</strong>
+  {{$.T "This page shows the benign corpus and the tight-window FP methodology today. Product FP numbers need a real-machine run; the violation table below stays empty until one exists."}}
+</section>
+
+<section class="panel">
+  <h2>{{$.T "Benign corpus distribution"}}</h2>
+  <p class="muted">{{$v.Total}} {{$.T "benign cases in"}} {{len $d.BenignDistribution}} {{$.T "subfamilies. FP01-FP56 group by operation form; FP57-FP121 follow ten role personas. Every benign case declares a verify_rc contract; a correct HIDS raises no high+ alert inside its tight window."}}</p>
+  <h3>{{$.T "Form group (FP01-FP56)"}} <span class="tag count">{{$v.FormTotal}}</span></h3>
+  <div class="tablewrap">
+  <table class="grid">
+    <thead><tr><th>{{$.T "Subfamily"}}</th><th class="num">{{$.T "Cases"}}</th><th class="barcol">{{$.T "Distribution"}}</th><th>{{$.T "Representative cases"}}</th></tr></thead>
+    <tbody>
+    {{range $v.FormRows}}
+      <tr>
+        <td><code>{{.Subfamily}}</code></td>
+        <td class="num">{{.Cases}}</td>
+        <td class="barcol"><div class="bar"><div class="bar-fill" style="width:{{pct .Cases $v.MaxCases}}%"></div></div></td>
+        <td>{{range .Examples}}<a class="tag" href="/case?id={{.}}">{{.}}</a> {{end}}</td>
+      </tr>
+    {{end}}
+    </tbody>
+  </table>
+  </div>
+  <h3>{{$.T "Persona group (FP57-FP121)"}} <span class="tag count">{{$v.PersonaTotal}}</span></h3>
+  <div class="tablewrap">
+  <table class="grid">
+    <thead><tr><th>{{$.T "Subfamily"}}</th><th class="num">{{$.T "Cases"}}</th><th class="barcol">{{$.T "Distribution"}}</th><th>{{$.T "Representative cases"}}</th></tr></thead>
+    <tbody>
+    {{range $v.PersonaRows}}
+      <tr>
+        <td><code>{{.Subfamily}}</code></td>
+        <td class="num">{{.Cases}}</td>
+        <td class="barcol"><div class="bar"><div class="bar-fill" style="width:{{pct .Cases $v.MaxCases}}%"></div></div></td>
+        <td>{{range .Examples}}<a class="tag" href="/case?id={{.}}">{{.}}</a> {{end}}</td>
+      </tr>
+    {{end}}
+    </tbody>
+  </table>
+  </div>
+  <p class="muted">{{$v.FormTotal}} {{$.T "form +"}} {{$v.PersonaTotal}} {{$.T "persona ="}} <span class="tag count">{{$v.Total}}</span> {{$.T "benign cases."}}</p>
+</section>
+
+<section class="panel methodology">
+  <h2>{{$.T "Tight-window FP methodology"}}</h2>
+  <h3>{{$.T "Window and tail anchor"}}</h3>
+  <p class="muted">{{$.T "Each benign case is judged over [start - 2500 ms, end + 2500 ms]. The tolerance anchors on the case tail, not the start: a case can run for seconds under the timeout, so start-only anchoring would wave through alerts fired mid-case."}}</p>
+  <h3>{{$.T "Severity gate"}}</h3>
+  <p class="muted">{{$.T "Only high and critical alerts count as violations (the high+ gate). Lower-severity alerts are noise, not FP."}}</p>
+  <h3>{{$.T "Three benign tiers"}}</h3>
+  <p class="muted">{{$.T "Benign cases split into verified (rc matches the declared verify_rc), attempt (rc differs), and legacy (no verify_rc). The primary FP rate uses verified operations; the all-attempt rate is the v2.1 fallback."}}</p>
+  <h3>{{$.T "Scheduler cross-talk check"}}</h3>
+  <p class="muted">{{$.T "For each violation the tool lists same-window attack cases, so comparing the fp-uid against attack uids separates scheduler cross-talk (same uid bucket) from a real regression."}}</p>
+  <h3>{{$.T "NOT-RUN and N/A"}}</h3>
+  <p class="muted">{{$.T "A benign row with bin_found=0 never ran (its binary was missing) and is never judged clean; it is excluded from the violation count. With no evaluable benign rows the tool prints N/A, not zero FP."}}</p>
+  <h3>{{$.T "Integrity gate"}}</h3>
+  <p class="muted">{{$.T "The alerts read must pass an integrity gate (fetch.complete true, window bounds present, fetch.count equal to the alert count). An unverifiable read exits 2 and never prints clean."}}</p>
+  <p class="muted">{{$.T "The audit tool is"}} <code>tools/fpcheck_tight.py</code>{{$.T ". Exit codes: 0 clean or N/A, 1 violations found, 2 invalid input."}}</p>
+</section>
+
+<section class="panel methodology">
+  <h2>{{$.T "Precision-FPR tradeoff"}}</h2>
+  <p class="muted">{{$.T "Lowering the severity threshold sees more detections and also flags benign operations as FP. The precision-FPR scatter on the"}} <a href="/scores">{{$.T "Scores"}}</a> {{$.T "page reads both axes together; the ideal corner is high precision and low FPR."}}</p>
+  <h3>{{$.T "Calibre A tradeoff (illustrative)"}}</h3>
+  <p class="muted">{{$.T "A generic execve auditd rule fires on benign reads too. At the high gate such a benign read is noise; at the medium gate the same alert counts as a FALSE POSITIVE. Lowering min_severity from high to medium therefore raises any-hit visibility but also raises the benign FP rate: the verified tier can read non-zero at medium where high reads zero. This is the cost of calibre A, more detection visibility and more benign execve flagged. The pattern is shown abstractly here; real per-run numbers appear on Scores only after an authorized real-machine run."}}</p>
+</section>
+
+<section class="panel methodology">
+  <h2>{{$.T "Why qinjing measures FP"}}</h2>
+  <p class="muted">{{$.T "ART and CALDERA execute attacks but ship no false-positive measurement. Academic network sets (CIC/NGIDS/DARPA TC) publish static labels with no FP audit. MITRE Eval separates Noise but is closed. qinjing ships benign personas with verify_rc contracts and a tight-window FP audit integrated with the scorer. One corpus, one run, detection and FP measured together, open and self-runnable."}}</p>
+</section>
+
+<section class="panel{{if not $d.Runs}} empty{{end}}">
+  <h2>{{$.T "Real-machine FP violations"}}</h2>
+  {{if not $d.Runs}}
+    <p class="muted">{{$.T "No real-machine run yet. The FP violation table activates when a run is scored; it will list per-run evaluable, verified, attempt and legacy counts, violations, and rates with the one-sided 95% upper bound."}}</p>
+  {{else}}
+    <div class="tablewrap">
+    <table class="grid">
+      <thead><tr><th>{{$.T "Product"}}</th><th class="num">{{$.T "Evaluable"}}</th><th class="num">{{$.T "verified / attempt / legacy"}}</th><th class="num">{{$.T "Violations"}}</th><th class="num">{{$.T "FP rate (verified)"}}</th><th class="num">{{$.T "FP rate (all attempts)"}}</th><th class="num">{{$.T "FP one-sided 95% upper"}}</th></tr></thead>
+      <tbody>
+      {{range $d.Runs}}
+        <tr>
+          <td>{{if .Product}}{{.Product}}{{else}}{{$.T "unnamed product"}}{{end}}{{if .Synthetic}} <span class="demo-badge">{{$.T "SYNTHETIC DEMO"}}</span>{{end}}</td>
+          <td class="num">{{.FP.Evaluable}}</td>
+          <td class="num">{{.FP.Verified}} / {{.FP.Attempt}} / {{.FP.Legacy}}</td>
+          <td class="num">{{.FP.Violations}} ({{.FP.ViolationsVerified}})</td>
+          <td class="num">{{fmtRate .FP.VerifiedRate}}</td>
+          <td class="num">{{fmtRate .FP.AttemptRate}}</td>
+          <td class="num">{{fmtRate .FP.AttemptUpper95}}</td>
+        </tr>
+      {{end}}
+      </tbody>
+    </table>
+    </div>
+  {{end}}
+  <p class="muted">{{$.T "Per-case violation drill-down awaits a scorer extension that emits per-case detail; today the scorer emits FP aggregates only."}}</p>
+</section>
+{{template "footer" .}}

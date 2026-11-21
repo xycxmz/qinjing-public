@@ -1,0 +1,56 @@
+# Signal-class external counterparts: what each class corresponds
+# to in Sigma/Elastic/Wazuh-style tooling (extracted verbatim from
+# the schema doc section 3 table; was docs/02 column 4). Read by
+# tools/gen_dashboard_data.py; one row per class, prose in column 2.
+account_creation	Sigma 账户创建
+account_discovery	Elastic BBR bf8c007c（who/w/users/id/groups 精确匹配，new_terms 压 FP）；FP 收窄：中等，多用户主机 w/who 属常规运维
+archive_staging	Sigma data compressed
+at_job_persistence	Elastic 84755a05（spool 文件事件）+ Elastic Labs 持久化 Primer（文档级）；覆盖缺口披露：规则只盯 Debian/SUSE spool 路径，RHEL 系 /var/spool/at 不命中，靶机若 RHEL 系此案如实记 MISS；FP 收窄：at/batch 调度面
+audit_log_tamper	Sigma auditd tamper（v18 继任锚，旧 T1562.002 已撤销）
+c2_socket_script	Sigma network_connection
+capability_abuse_grant	Sigma setcap
+cloud_cluster_recon	（无先例）
+cloud_metadata_access	Sigma IMDS 169.254.169.254
+container_escape	Elastic 预置规则 Potential Chroot Container Escape via Mount（规则级，URL 见 mapping-notes §二十）；Red Canary Escape-to-Host 覆盖
+credential_dump_shadow	（无先例）
+credential_env_read	Sigma /proc environ
+credential_file_read	Sigma private key access
+cryptomining	Sigma xmrig
+data_destruction	Sigma 37222991 + 2953194b（dd if=/dev/zero|null）+ Elastic shred 规则官方双标 T1485；FP 收窄：锚定覆写（dd/shred），rm -rf 归 indicator_removal
+db_mass_dump	（无先例）
+defense_service_stop	Sigma de25eeb8（systemctl/service stop 泛告警）+ Elastic 2f8a1226（仅 syslog 族）；锚披露：Sigma 实际标 T1489（另有笔误 t1685）不采信，取 T1562.001 语义之 v18 继任 T1685.007；FP 收窄：停安全/防御类服务（clamd/auditd 等），停业务服务不收
+disk_wipe	Sigma disk wipe（v18 继任锚，旧 T1488 已撤销）
+dns_tunneling	Sigma dns_query
+download_and_execute	Sigma curl pipe shell
+ebpf_load	（无先例）
+exfil_transfer	Sigma exfiltration
+file_attr_lock	（无先例）
+fileless_execution	（无先例）
+git_hook_persistence	Elastic 7ce5e1c7（hook 子进程执行）+ 9822c5a1（hook 外联）；FP 收窄：观测面是 hook 执行而非写入，案须带触发（写 hook 后接 git commit/checkout/merge）
+history_clear	Sigma clear history
+indicator_removal	Sigma 30aed7b6（rm/shred/unlink，informational）+ Elastic a1329140 shred（排 logrotate）+ Elastic aa895aea /var/log 删除（FIM 面）+ Wazuh 80791（旧号 T1107）；FP 收窄：裸 rm 不收，目标须 /var/log、history、工具残留或带 -f/-rf/-u（rm 形态无 T1485 外部映射，归本类不归 data_destruction）
+k8s_pod_exec	Elastic 14de811c（K8s audit 面）；FP 收窄：观测面是 K8s API 审计而非主机 argv，沿 cloud_cluster_recon 先例开类
+kernel_module_load	Wazuh insmod/modprobe
+lateral_ssh_tunnel	（无先例）
+linker_hijack	SigmaHQ 社区规则族（/etc/ld.so.preload 写入监听）+ auditd path watch 惯例（文档级证据）
+net_recon_local	（无先例）
+net_scan_external	Sigma nmap
+persistence_boot_script	Wazuh FIM rc.local
+persistence_cron_write	Wazuh FIM /var/spool/cron
+persistence_pam	Wazuh FIM /etc/pam.d
+persistence_ssh_key	Sigma authorized_keys
+persistence_systemd	Sigma service_install
+reverse_shell	Sigma /dev/tcp
+root_cert_install	Sigma 78a80655（update-ca-trust/update-ca-certificates argv）；FP 收窄：证据面窄，只盯刷新命令，cp 写入本身要 FIM 补
+setuid_discovery	（无先例）
+shell_config_persistence	Sigma 规则 a94cdd87-6c54-4678-a6cc-2814ffe5a13d（规则级）；Elastic persistence_shell_configuration_modification；auditd 变体
+sniffer_run	Sigma tcpdump
+sudoers_change	Wazuh FIM sudoers
+suspicious_interpreter_exec	Sigma process_creation
+system_discovery	（无先例）
+systemd_timer_persistence	Elastic 7fb500fa（*.timer 落 10 个 systemd 目录）+ pberba 狩猎文（文档级）；FP 收窄：包管理/配置管理自建 timer 是 FP 源（规则自带长排除）
+timestomp	Sigma b3cec4e7（touch -t/-d/-r，内嵌 ART 对照）+ Elastic b0046934（Noise: High）；FP 收窄：-t/-r 显式设时才收，-a/-m 单独出现不收（FP 最重）
+tor_connection	EVE 端口类规则
+tunnel_tool_use	（无先例）
+valid_account_remote_login	Wazuh 5712 sshd accepted；Sigma T1078 ssh login
+webshell_write	Wazuh 官方 how-to「FIM on webroot 检 webshell」文档路径；SigmaHQ Web 服务器规则族（映射例为文档级，规则级编号待 U4 样本对账）

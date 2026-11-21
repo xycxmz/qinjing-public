@@ -1,0 +1,387 @@
+[
+ {
+  "regex": "python[23]?\\s+[^;|]*(-c|-m)\\s",
+  "signal_class": "suspicious_interpreter_exec",
+  "basis": "xiezhi seed exec-interp-inline-code (mitre T1059)"
+ },
+ {
+  "regex": "perl\\s+[^;|]*-e\\s",
+  "signal_class": "suspicious_interpreter_exec",
+  "basis": "xiezhi seed exec-interp-inline-code (mitre T1059)"
+ },
+ {
+  "regex": "php\\s+[^;|]*-r\\s",
+  "signal_class": "suspicious_interpreter_exec",
+  "basis": "xiezhi seed exec-interp-inline-code (mitre T1059)"
+ },
+ {
+  "regex": "ruby\\s+[^;|]*-e\\s",
+  "signal_class": "suspicious_interpreter_exec",
+  "basis": "xiezhi seed exec-interp-inline-code (mitre T1059)"
+ },
+ {
+  "regex": "lua\\s+[^;|]*-e\\s",
+  "signal_class": "suspicious_interpreter_exec",
+  "basis": "xiezhi seed exec-interp-inline-code (mitre T1059)"
+ },
+ {
+  "regex": "node\\s+[^;|]*-e\\s",
+  "signal_class": "suspicious_interpreter_exec",
+  "basis": "xiezhi seed exec-interp-inline-code (mitre T1059)"
+ },
+ {
+  "regex": "curl.*https?://.*\\|\\s*(ba|z|da)?sh\\b",
+  "signal_class": "download_and_execute",
+  "basis": "xiezhi seed exec-curl-pipe-shell (mitre T1059.004)"
+ },
+ {
+  "regex": "wget.*\\|\\s*(ba|z|da)?sh\\b",
+  "signal_class": "download_and_execute",
+  "basis": "xiezhi seed exec-curl-pipe-shell (mitre T1059.004)"
+ },
+ {
+  "regex": "(>&|<&|<>)\\s*/dev/(tcp|udp)/",
+  "signal_class": "reverse_shell",
+  "basis": "xiezhi seed exec-dev-tcp-connect (mitre T1059.004)"
+ },
+ {
+  "regex": "python[23]?\\s+(-c|-m)\\s+[^|;&]*(socket|create_connection|connect_ex|\\.connect\\()",
+  "signal_class": "c2_socket_script",
+  "basis": "xiezhi seed exec-python-socket-c2 (mitre T1095)"
+ },
+ {
+  "regex": "trycloudflare\\.com",
+  "signal_class": "tunnel_tool_use",
+  "basis": "xiezhi seed exec-tunnel-cloudflare (mitre T1071.001)"
+ },
+ {
+  "regex": "cloudflared\\s+(tunnel|access|--url)",
+  "signal_class": "tunnel_tool_use",
+  "basis": "xiezhi seed exec-tunnel-cloudflare (mitre T1071.001)"
+ },
+ {
+  "regex": "ngrok",
+  "signal_class": "tunnel_tool_use",
+  "basis": "xiezhi seed exec-tunnel-cloudflare (mitre T1071.001)"
+ },
+ {
+  "regex": "(>>|tee\\s+-a)[^;|]*\\s*(/var/spool/cron|/etc/crontab|/etc/cron\\.)",
+  "signal_class": "persistence_cron_write",
+  "basis": "xiezhi seed exec-persistence-cron-write (mitre T1053.003)"
+ },
+ {
+  "regex": "(>>|>)\\s*(/var/spool/cron|/etc/crontab|/etc/cron\\.)",
+  "signal_class": "persistence_cron_write",
+  "basis": "xiezhi seed exec-persistence-cron-write (mitre T1053.003)"
+ },
+ {
+  "regex": "crontab\\s+[^;|]*/",
+  "signal_class": "persistence_cron_write",
+  "basis": "xiezhi seed exec-persistence-cron-write (mitre T1053.003)"
+ },
+ {
+  "regex": "systemctl\\s+(enable|reenable)\\s",
+  "signal_class": "persistence_systemd",
+  "basis": "xiezhi seed exec-persistence-systemd-enable (mitre T1543.002)"
+ },
+ {
+  "regex": "update-rc\\.d\\s+\\S+\\s+(enable|defaults)",
+  "signal_class": "persistence_systemd",
+  "basis": "xiezhi seed exec-persistence-systemd-enable (mitre T1543.002)"
+ },
+ {
+  "regex": "chkconfig\\s+\\S+\\s+on\\b",
+  "signal_class": "persistence_systemd",
+  "basis": "xiezhi seed exec-persistence-systemd-enable (mitre T1543.002)"
+ },
+ {
+  "regex": "(>>|tee\\s+-a)[^;|]*\\s*/etc/(rc\\.local|rc\\.d|init\\.d)",
+  "signal_class": "persistence_boot_script",
+  "basis": "xiezhi seed exec-persistence-rc-local (mitre T1037.004)"
+ },
+ {
+  "regex": "(>>|>)\\s*/etc/(rc\\.local|rc\\.d|init\\.d)",
+  "signal_class": "persistence_boot_script",
+  "basis": "xiezhi seed exec-persistence-rc-local (mitre T1037.004)"
+ },
+ {
+  "regex": "(>>|tee\\s+-a)[^|;&]*authorized_keys",
+  "signal_class": "persistence_ssh_key",
+  "basis": "xiezhi seed exec-authorized-keys-write (mitre T1098.004)"
+ },
+ {
+  "regex": "ssh-(rsa|ed25519|dsa|ecdsa)[^|;&]*(>>|authorized_keys)",
+  "signal_class": "persistence_ssh_key",
+  "basis": "xiezhi seed exec-authorized-keys-write (mitre T1098.004)"
+ },
+ {
+  "regex": "(>>|>)\\s*/etc/pam\\.d",
+  "signal_class": "persistence_pam",
+  "basis": "xiezhi seed exec-persistence-pam-write (mitre T1556.003)"
+ },
+ {
+  "regex": "^useradd\\s|^sudo\\s+useradd\\s|[;|&]\\s*useradd\\s",
+  "signal_class": "account_creation",
+  "basis": "xiezhi seed exec-user-creation (mitre T1136)"
+ },
+ {
+  "regex": "adduser\\s+--(shell|gid|uid)|chpasswd|passwd\\s+--stdin",
+  "signal_class": "account_creation",
+  "basis": "xiezhi seed exec-user-creation (mitre T1136)"
+ },
+ {
+  "regex": "(>>|tee\\s+-a)[^;|]*\\s*/etc/sudoers",
+  "signal_class": "sudoers_change",
+  "basis": "xiezhi seed exec-sudoers-write (mitre T1548.003)"
+ },
+ {
+  "regex": "(>>|>)\\s*/etc/sudoers",
+  "signal_class": "sudoers_change",
+  "basis": "xiezhi seed exec-sudoers-write (mitre T1548.003)"
+ },
+ {
+  "regex": "/root/\\.(ssh|aws|kube)|/home/[^/]+/\\.(ssh|aws|kube)|id_rsa([^.]|$)|authorized_keys|\\.git-credentials",
+  "signal_class": "credential_file_read",
+  "basis": "xiezhi seed exec-cred-material-read (mitre T1552.001)"
+ },
+ {
+  "regex": "(cat|grep|head|tail|less|more|find).*(\\.env|\\.pem|\\.key|\\.pfx)\\b",
+  "signal_class": "credential_file_read",
+  "basis": "xiezhi seed exec-cred-material-read (mitre T1552.001)"
+ },
+ {
+  "regex": "AWS_SECRET_ACCESS_KEY|aws_access_key_id|AKIA[0-9A-Z]{16}|BEGIN [A-Z]+ PRIVATE KEY",
+  "signal_class": "credential_file_read",
+  "basis": "xiezhi seed exec-cred-secret-pattern (mitre T1552.001)"
+ },
+ {
+  "regex": "\\.aws/credentials|\\.pgpass",
+  "signal_class": "credential_file_read",
+  "basis": "xiezhi seed exec-cred-secret-pattern (mitre T1552.001)"
+ },
+ {
+  "regex": "\\.my\\.cnf|\\.pgpass|mongo[^ |;&]*uri",
+  "signal_class": "credential_file_read",
+  "basis": "xiezhi seed exec-db-config-read (mitre T1552.001)"
+ },
+ {
+  "regex": "/proc/[0-9]+/environ|/proc/self/environ",
+  "signal_class": "credential_env_read",
+  "basis": "xiezhi seed exec-cred-proc-environ (mitre T1552.004)"
+ },
+ {
+  "regex": "ssh-keygen\\s+[^;|]*(/tmp/|/dev/shm)",
+  "signal_class": "credential_env_read",
+  "basis": "xiezhi seed exec-cred-keygen-staging (mitre T1552.004)"
+ },
+ {
+  "regex": "(100\\.100\\.100\\.200|169\\.254\\.169\\.254)[^;|]*/latest/[^;|]*(iam|ram|security-credentials|user-data|dynamic)",
+  "signal_class": "cloud_metadata_access",
+  "basis": "xiezhi seed exec-cred-metadata-creds (mitre T1552.005)"
+ },
+ {
+  "regex": "/latest/(security-credentials|user-data|dynamic/iam-role)",
+  "signal_class": "cloud_metadata_access",
+  "basis": "xiezhi seed exec-cred-metadata-creds (mitre T1552.005)"
+ },
+ {
+  "regex": "100\\.100\\.100\\.200|169\\.254\\.169\\.254|/latest/(meta-data|user-data|dynamic)",
+  "signal_class": "cloud_metadata_access",
+  "basis": "xiezhi seed exec-cred-metadata-fetch (mitre T1552.005)"
+ },
+ {
+  "regex": "/etc/(shadow|gshadow)\\b|/etc/shadow-|/etc/passwd-",
+  "signal_class": "credential_dump_shadow",
+  "basis": "xiezhi seed exec-cred-shadow-read (mitre T1003.008)"
+ },
+ {
+  "regex": "cap_(setuid|sys_admin|sys_ptrace|dac_override|dac_read_search|sys_module)",
+  "signal_class": "capability_abuse_grant",
+  "basis": "xiezhi seed exec-cap-grant-priv (mitre T1548.001)"
+ },
+ {
+  "regex": "find\\s+[^;|]*-perm\\s*-[246]000",
+  "signal_class": "setuid_discovery",
+  "basis": "xiezhi seed exec-setuid-discovery (mitre T1548.001)"
+ },
+ {
+  "regex": "getcap\\s+[^;|]*-r",
+  "signal_class": "setuid_discovery",
+  "basis": "xiezhi seed exec-setuid-discovery (mitre T1548.001)"
+ },
+ {
+  "regex": "^-[246]000$",
+  "signal_class": "setuid_discovery",
+  "basis": "xiezhi seed exec-setuid-discovery (mitre T1548.001)"
+ },
+ {
+  "regex": "(rm|shred|mv|truncate|dd)\\s+[^;|]*audit\\.log",
+  "signal_class": "audit_log_tamper",
+  "basis": "xiezhi seed exec-auditd-tamper (mitre T1562.002)"
+ },
+ {
+  "regex": ">\\s*\\S*audit\\.log|>\\s*/var/log/audit",
+  "signal_class": "audit_log_tamper",
+  "basis": "xiezhi seed exec-auditd-tamper (mitre T1562.002)"
+ },
+ {
+  "regex": "systemctl\\s+[^;|]*(stop|disable|mask|kill)\\s+(auditd|rsyslogd?|syslog(-ng)?)",
+  "signal_class": "audit_log_tamper",
+  "basis": "xiezhi seed exec-auditd-tamper (mitre T1562.002)"
+ },
+ {
+  "regex": "service\\s+(auditd|rsyslogd?|syslog(-ng)?)\\s+(stop|disable|restart)|pkill\\s+[^;|]*auditd|killall\\s+auditd",
+  "signal_class": "audit_log_tamper",
+  "basis": "xiezhi seed exec-auditd-tamper (mitre T1562.002)"
+ },
+ {
+  "regex": "auditctl\\s+[^;|]*-e\\s+0",
+  "signal_class": "audit_log_tamper",
+  "basis": "xiezhi seed exec-auditd-tamper (mitre T1562.002)"
+ },
+ {
+  "regex": "history\\s+-c|unset\\s+HISTFILE|export\\s+HISTFILE=/dev/null|HISTSIZE=0",
+  "signal_class": "history_clear",
+  "basis": "xiezhi seed exec-hist-clear (mitre T1070.003)"
+ },
+ {
+  "regex": "bash_history",
+  "signal_class": "history_clear",
+  "basis": "xiezhi seed exec-hist-clear (mitre T1070.003)"
+ },
+ {
+  "regex": "chattr\\s+[^;|]*\\+[iasu]",
+  "signal_class": "file_attr_lock",
+  "basis": "xiezhi seed exec-chattr-immutable (mitre T1222.002)"
+ },
+ {
+  "regex": "^\\+[iasu]$",
+  "signal_class": "file_attr_lock",
+  "basis": "xiezhi seed exec-chattr-immutable (mitre T1222.002)"
+ },
+ {
+  "regex": "ssh\\s+[^;|]*-[DLR]\\s",
+  "signal_class": "lateral_ssh_tunnel",
+  "basis": "xiezhi seed exec-lateral-ssh-forward (mitre T1572)"
+ },
+ {
+  "regex": "(?=.*(?:nmap))(?=.*(?:-s[ST]|-A|--script|-p\\s))",
+  "signal_class": "net_scan_external",
+  "basis": "xiezhi seed exec-recon-nmap (mitre T1046)"
+ },
+ {
+  "regex": "masscan",
+  "signal_class": "net_scan_external",
+  "basis": "xiezhi seed exec-masscan (mitre T1595)"
+ },
+ {
+  "regex": "zgrab",
+  "signal_class": "net_scan_external",
+  "basis": "xiezhi seed exec-masscan (mitre T1595)"
+ },
+ {
+  "regex": "\\b(traceroute|tracepath|tcptraceroute)\\b",
+  "signal_class": "net_scan_external",
+  "basis": "xiezhi seed exec-recon-net-probe (mitre T1046)"
+ },
+ {
+  "regex": "\\b(nc|ncat|netcat)\\s+[^;|]*(-z|-w)\\s",
+  "signal_class": "net_scan_external",
+  "basis": "xiezhi seed exec-recon-net-probe (mitre T1046)"
+ },
+ {
+  "regex": "\\bnetstat\\b",
+  "signal_class": "net_recon_local",
+  "basis": "xiezhi seed exec-recon-netstat (mitre T1049)"
+ },
+ {
+  "regex": "^ss$|\\bss\\s+-",
+  "signal_class": "net_recon_local",
+  "basis": "xiezhi seed exec-recon-netstat (mitre T1049)"
+ },
+ {
+  "regex": "\\barp\\s+(-a|-n|--show)",
+  "signal_class": "net_recon_local",
+  "basis": "xiezhi seed exec-recon-netstat (mitre T1049)"
+ },
+ {
+  "regex": "\\bfinger\\s+\\S",
+  "signal_class": "net_recon_local",
+  "basis": "xiezhi seed exec-recon-netstat (mitre T1049)"
+ },
+ {
+  "regex": "\\bAXFR\\b",
+  "signal_class": "net_recon_local",
+  "basis": "xiezhi seed exec-recon-axfr-dns (mitre T1018)"
+ },
+ {
+  "regex": "(?i)(dig|nslookup)\\s+[^;|]*-type=\\s*(AXFR|ANY|SRV|MX)",
+  "signal_class": "net_recon_local",
+  "basis": "xiezhi seed exec-recon-axfr-dns (mitre T1018)"
+ },
+ {
+  "regex": "host\\s+[^;|]*-t\\s*(AXFR|ANY|SRV|MX|TXT|NS)\\b",
+  "signal_class": "net_recon_local",
+  "basis": "xiezhi seed exec-recon-axfr-dns (mitre T1018)"
+ },
+ {
+  "regex": "kubectl\\s+[^;|]*(get|describe)\\s+[^;|]*(nodes|secrets|all|--all-?namespaces|-A\\b)",
+  "signal_class": "cloud_cluster_recon",
+  "basis": "xiezhi seed exec-recon-kubectl (mitre T1526)"
+ },
+ {
+  "regex": "uname\\s+-(a|r|s)|(cat|head|tail|less|more)\\s+/etc/(passwd|issue)",
+  "signal_class": "system_discovery",
+  "basis": "xiezhi seed exec-system-discovery (mitre T1082)"
+ },
+ {
+  "regex": "ls\\s+[^|;&]*(/var/tmp|/dev/shm)",
+  "signal_class": "system_discovery",
+  "basis": "xiezhi seed exec-tmp-enumerate (mitre T1083)"
+ },
+ {
+  "regex": "find\\s+/etc\\s+[^;|]*-name",
+  "signal_class": "system_discovery",
+  "basis": "xiezhi seed exec-staging-config-find (mitre T1083)"
+ },
+ {
+  "regex": "\\btcpdump\\b|\\btshark\\b|\\btermshark\\b",
+  "signal_class": "sniffer_run",
+  "basis": "xiezhi seed exec-sniffer-run (mitre T1040)"
+ },
+ {
+  "regex": "(tar|zip|rar|7z)\\s+[^;|]*(passwd|shadow|id_rsa|\\.ssh|known_hosts|authorized_keys)",
+  "signal_class": "archive_staging",
+  "basis": "xiezhi seed exec-staging-sensitive-tar (mitre T1074.001)"
+ },
+ {
+  "regex": "\\b(mysqldump|pg_dump|pg_dumpall)\\b",
+  "signal_class": "db_mass_dump",
+  "basis": "xiezhi seed exec-dump-database (mitre T1005)"
+ },
+ {
+  "regex": "(scp|sftp|rsync)\\s+[^;|]*(/tmp/|/var/tmp/|/dev/shm/)[^;|]*\\.(tar|tgz|zip|gz|7z|bz2)\\b[^;|]*@",
+  "signal_class": "exfil_transfer",
+  "basis": "xiezhi seed exec-exfil-archive-remote (mitre T1041)"
+ },
+ {
+  "regex": "(curl|wget)\\s+[^;|]*((-T|--upload-file)\\s+[^;|]*https?://|--data-binary\\s+@/|-d\\s*@(/tmp/|/var/tmp/|/dev/shm/|/root/|/home/)|(-d|--data-binary)\\s+@-|-F\\s*file=@)",
+  "signal_class": "exfil_transfer",
+  "basis": "xiezhi seed exec-exfil-curl-upload (mitre T1041)"
+ },
+ {
+  "regex": "(xmrig|minerd|stratum\\+tcp|pool\\.minexmr|nanopool|supportxmr)",
+  "signal_class": "cryptomining",
+  "basis": "xiezhi seed exec-miner-config (mitre T1496)"
+ },
+ {
+  "regex": "--donate-level|--cpu-max-threads|--url=stratum",
+  "signal_class": "cryptomining",
+  "basis": "xiezhi seed exec-miner-config (mitre T1496)"
+ },
+ {
+  "regex": "dd\\s+[^;|]*of=/dev/(sd|vd|xv|nvme|disk|mapper|mmcblk)",
+  "signal_class": "disk_wipe",
+  "basis": "xiezhi seed exec-impact-dd-rawdisk (mitre T1488)"
+ }
+]

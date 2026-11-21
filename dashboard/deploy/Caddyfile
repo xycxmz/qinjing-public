@@ -1,0 +1,6 @@
+# TLS reverse proxy in front of the dashboard (auto Let's Encrypt).
+# Replace the hostname; the Go service stays bound to 127.0.0.1:8090.
+dashboard.example.com {
+	encode gzip
+	reverse_proxy 127.0.0.1:8090
+}

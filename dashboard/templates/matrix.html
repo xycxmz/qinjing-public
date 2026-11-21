@@ -1,38 +1,66 @@
 {{template "header" .}}
 {{$d := .Data}}
-<p class="muted">Case-count overlay of the {{$d.Meta.TechniquesCovered}} covered techniques (of
-  {{$d.Meta.MatrixTechniques}} in the pinned ATT&amp;CK {{$d.Meta.AttackVersion}} matrix). Color bands match the
-  Navigator layer: more cases = deeper coverage of that technique.</p>
+<p class="muted">{{$.T "Case-count overlay of the"}} {{$d.Meta.TechniquesCovered}} {{$.T "covered techniques (of"}}
+  {{$d.Meta.MatrixTechniques}} {{$.T "in the pinned ATT&CK"}} {{$d.Meta.AttackVersion}} {{$.T "matrix). Color bands match the Navigator layer: more cases = deeper coverage of that technique."}}</p>
 
 <section class="panel">
   <div class="heatlegend">
-    <span class="heat-1 swatch"></span> 1–2 cases
-    <span class="heat-2 swatch"></span> 3–5 cases
-    <span class="heat-3 swatch"></span> 6+ cases
+    <span class="heat-1 swatch"></span> {{$.T "1–2 cases"}}
+    <span class="heat-2 swatch"></span> {{$.T "3–5 cases"}}
+    <span class="heat-3 swatch"></span> {{$.T "6+ cases"}}
   </div>
   <div class="heatmap">
     {{range $d.TechniqueHeatmap}}
     <a class="heatcell {{heatClass .Score}}" href="https://attack.mitre.org/techniques/{{.TechniqueID}}/"
-       title="{{.Name}} — {{.Score}} cases (detectable {{.Detectable}} / gap {{.Gap}})">
+       title="{{.Name}} — {{.Score}} {{$.T "cases"}} ({{$.T "detectable"}} {{.Detectable}} / {{$.T "gap"}} {{.Gap}})">
       <span class="heat-id">{{.TechniqueID}}</span><span class="heat-score">{{.Score}}</span>
     </a>
     {{end}}
   </div>
-  <p class="muted">Full interactive matrix:
-    <a href="/layer.json">download the Navigator layer</a>, then load it in
+  <p class="muted">{{$.T "Full interactive matrix:"}}
+    <a href="/layer.json">{{$.T "download the Navigator layer"}}</a>{{$.T ", then load it in"}}
     <a href="https://mitre-attack.github.io/attack-navigator/">MITRE ATT&amp;CK Navigator</a>
-    (Layer → Open Layer from URL / upload). Each cell links to its technique on attack.mitre.org.</p>
+    {{$.T "(Layer → Open Layer from URL / upload). Each cell links to its technique on attack.mitre.org."}}</p>
 </section>
 
 <section class="panel">
-  <h2>Technique detail</h2>
+  <h2>{{$.T "Navigator layer semantics"}}</h2>
+  <p class="muted">{{$.T "The layer JSON is standard ATT&CK Navigator format (unchanged); what each field means here:"}}</p>
+  <table class="kv">
+    <tr><td><code>score</code></td><td>{{$.T "the number of corpus attack cases citing that technique (not a detection score)."}}</td></tr>
+    <tr><td><code>comment</code></td><td>{{$.T "the case-id list with its detectable / gap split."}}</td></tr>
+    <tr><td><code>gradient</code> / <code>legendItems</code></td><td>{{$.T "the case-count color bands (1–2 / 3–5 / 6+), matching the heatmap above."}}</td></tr>
+  </table>
+</section>
+
+<section class="panel">
+  <h2>{{$.T "Technique detail"}}</h2>
+  <div class="tablewrap">
   <table class="grid">
-    <thead><tr><th>Technique</th><th>Name</th><th class="num">Cases</th><th class="num">Detectable</th><th class="num">Gap</th></tr></thead>
+    <thead><tr><th>{{$.T "Technique"}}</th><th>{{$.T "Name"}}</th><th class="num">{{$.T "Cases"}}</th><th class="num">{{$.T "Detectable"}}</th><th class="num">{{$.T "Gap"}}</th></tr></thead>
     <tbody>
     {{range $d.TechniqueHeatmap}}
       <tr><td><code>{{.TechniqueID}}</code></td><td>{{.Name}}</td><td class="num">{{.Score}}</td><td class="num">{{.Detectable}}</td><td class="num">{{.Gap}}</td></tr>
     {{end}}
     </tbody>
   </table>
+  </div>
+</section>
+
+<section class="panel">
+  <h2>{{$.T "Uncovered techniques"}}</h2>
+  <p class="muted">{{len $d.Uncovered}} {{$.T "of"}} {{$d.Meta.MatrixTechniques}} {{$.T "matrix techniques have no corpus case yet. Each is a coverage gap you can help close:"}}
+    <a class="cta" href="https://github.com/xycxmz/qinjing-public/issues">{{$.T "Contribute a test"}}</a></p>
+  <div class="tablewrap uncovered-wrap">
+  <table class="grid">
+    <thead><tr><th>{{$.T "Technique"}}</th><th>{{$.T "Name"}}</th><th>{{$.T "Contribute"}}</th></tr></thead>
+    <tbody>
+    {{range $d.Uncovered}}
+      <tr><td><a href="https://attack.mitre.org/techniques/{{.TechniqueID}}/"><code>{{.TechniqueID}}</code></a></td><td>{{.Name}}</td>
+        <td><a href="https://github.com/xycxmz/qinjing-public/issues">{{$.T "propose a case"}}</a></td></tr>
+    {{end}}
+    </tbody>
+  </table>
+  </div>
 </section>
 {{template "footer" .}}

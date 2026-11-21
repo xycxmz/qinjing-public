@@ -494,7 +494,7 @@ check "scheme-separated subdomain still passes after the -m fix" \
   "$(hy 'curl http://c2.tun.example.com/x')" "ok"
 check "main corpus passes the hygiene lint" \
   "$("$ROOT/tools/parse.py" --validate "$ROOT/corpus/qinjing.yaml" 2>&1)" \
-  "validate: OK, 1075 cases (120 fp, 955 attack)"
+  "validate: OK, 1076 cases (120 fp, 956 attack)"
 
 echo "== T1: duplicate-cmd gate (docs/11, owner decision 5) =="
 python3 - "$ROOT/tools/parse.py" "$ROOT/corpus/qinjing.yaml" >"$TMP/dupgate.out" 2>&1 <<'PYEOF'
@@ -574,12 +574,14 @@ check "exact-group match enforced (a third case on a registered cmd fails)" \
   "third-case-breaks-registration"
 
 echo "== D11: cleanup fields drive the sweep =="
-# 87 = 85 migrated + VR549/VR550: the T4 dedup reshapes turned those two
-# deletes into artifact-producing forms (dd overwrite, shred -n 1), so each
-# gained the rm -f cleanup its data_destruction siblings already carry.
+# 104 = 87 (85 migrated + VR549/VR550 from the docs/11 T4 reshapes) + 17
+# real-mode local scratch writes that gained cleanup in the docs/11 T6
+# idempotency round (VR118/124/135/213/259/269/364/365/368/369/370/372/389/
+# 515/516/518/565). The T6 lint in parse.py --validate now fails any real
+# case with a local /tmp/qinjing-* write and no cleanup.
 check "cleanup export lists the migrated cases" \
   "$("$ROOT/tools/parse.py" --cleanup "$ROOT/corpus/qinjing.yaml" | wc -l | tr -d ' ')" \
-  "87"
+  "104"
 check_grep "FP09 carries its artifact cleanup" \
   "cleanup: rm -f /tmp/qinjing-backup.tar.gz" "$ROOT/corpus/qinjing.yaml"
 check_grep "L04 cleans both key artifacts in one rm" \
@@ -657,6 +659,100 @@ print("cleanup-subpath-ok" if ok_sub and bad_dotdot and bad_dot
 PYEOF
 check "cleanup allows scratch subpaths, rejects traversal segments" \
   "$(cat "$TMP/cleansub.out")" "cleanup-subpath-ok"
+python3 - "$ROOT/tools/parse.py" >"$TMP/scratchlint.out" 2>&1 <<'PYEOF'
+import os
+import sys
+
+sys.path.insert(0, os.path.dirname(os.path.abspath(sys.argv[1])))
+import parse
+
+
+def scratch_case(cid, cmd, impact, cleanup=None):
+    lines = [
+        "attacks:",
+        "  - id: " + cid,
+        "    tactic: TA0006",
+        "    technique: NONE",
+        "    name: scratch lint probe",
+        "    platforms: [linux]",
+        "    cmd: '" + cmd + "'",
+        "    bin: cp",
+        "    creates_process: true",
+        "    mode: real",
+        "    expected_signals: []",
+        "    related_signals: []",
+        "    expect: gap",
+        "    impact: " + impact,
+        ]
+    if cleanup is not None:
+        lines.append("    cleanup: " + cleanup)
+    return parse.parse_lines(lines)
+
+
+def fires(cases):
+    return any("scratch write" in e for e in parse.validate(cases))
+
+
+bad_real = fires(scratch_case(
+    "K97", "cp /etc/shadow /tmp/qinjing-probe", "temporary"))
+cleaned = not fires(scratch_case(
+    "K96", "cp /etc/shadow /tmp/qinjing-probe", "temporary",
+    "rm -f /tmp/qinjing-probe"))
+remote_exempt = not fires(scratch_case(
+    "K95", 'ssh user@203.0.113.9 "cat > /tmp/qinjing-remote"', "none"))
+tee_source_exempt = not fires(scratch_case(
+    "K94", "tee -a /root/.ssh/authorized_keys < /tmp/qinjing-src.pub",
+    "destructive"))
+print("scratch-lint-ok" if bad_real and cleaned and remote_exempt
+      and tee_source_exempt else "scratch-lint-broken")
+PYEOF
+check "T6 lint: real local scratch write needs cleanup; remote/tee-source exempt" \
+  "$(cat "$TMP/scratchlint.out")" "scratch-lint-ok"
+
+echo "== T7: benign verify_rc contract (docs/11 T7/F8, 2026-11-21 target rc) =="
+python3 - "$ROOT" >"$TMP/t7decl.out" 2>&1 <<'PYEOF'
+import os
+import sys
+
+root = sys.argv[1]
+sys.path.insert(0, os.path.join(root, "tools"))
+import parse
+
+cases = parse.parse_corpus(os.path.join(root, "corpus", "qinjing.yaml"))
+fp = {c["id"]: c for c in cases["false_positives"]}
+bad = []
+# curl probes: no listener on the reference bench -> measured rc 7.
+for cid in ("FP04", "FP116", "FP117", "FP118"):
+    if fp[cid].get("verify_rc") != "7":
+        bad.append(cid + " verify_rc!=7")
+    if fp[cid].get("mode") != "real":
+        bad.append(cid + " mode!=real")
+# nc probes: nc absent from the reference image -> sim-missing-bin (NOT-RUN
+# there); verify_rc stays 0 (the successful-run contract, inert when bin=0).
+for cid in ("FP20", "FP119", "FP120"):
+    if fp[cid].get("mode") != "sim-missing-bin":
+        bad.append(cid + " mode!=sim-missing-bin")
+    if fp[cid].get("bin") != "nc":
+        bad.append(cid + " bin!=nc")
+    if fp[cid].get("verify_rc") != "0":
+        bad.append(cid + " verify_rc!=0")
+# FP117 must expose curl's rc through the head pipeline.
+if "set -o pipefail;" not in fp["FP117"]["cmd"]:
+    bad.append("FP117 missing pipefail")
+print("t7-decl-ok" if not bad else "t7-decl-broken: " + ",".join(bad))
+PYEOF
+check "T7 declarations: curl probes verify_rc 7, nc probes sim-missing-bin, FP117 pipefail" \
+  "$(cat "$TMP/t7decl.out")" "t7-decl-ok"
+T7REP="$TMP/t7.md"
+python3 "$ROOT/tools/scorer.py" "$ROOT/corpus/qinjing.yaml" "$FIX/t7-exec.log" \
+  "$FIX/t7-alerts.json" --out "$T7REP" >/dev/null 2>"$TMP/t7.err"
+check "T7 reference-bench subset run exits 0" "$?" "0"
+check_grep "T7 subset banner names the seven probes" \
+  "run: SUBSET(FP04,FP20,FP116,FP117,FP118,FP119,FP120)" "$T7REP"
+check_grep "T7 curl probes verified (rc7 matches), nc probes NOT-RUN" \
+  "benign cases: 7 (evaluable: 4; not-run: 3; verified: 4, attempt-only: 0, legacy: 0)" "$T7REP"
+check_grep "T7 verified-tier FP rate defined (0/4, not the pre-fix N/A)" \
+  "FP rate on verified operations (v2.2 primary): 0/4 = 0%" "$T7REP"
 
 echo "== D12: chain-level verdicts =="
 chain_row_verdict() {
@@ -891,11 +987,11 @@ echo "== family split gate (docs/11 phase A / G8, T3 rebalance) =="
 python3 "$ROOT/tools/family_check.py" >"$TMP/fam.out" 2>&1
 check "family split validator exits 0" "$?" "0"
 check_grep "registry covers every case" \
-  "  total cases: 1075" "$TMP/fam.out"
+  "  total cases: 1076" "$TMP/fam.out"
 check_grep "family count after benign sub-family split" \
   "  total families: 73" "$TMP/fam.out"
 check_grep "public side size" \
-  "  public: 896 cases (59 families)" "$TMP/fam.out"
+  "  public: 897 cases (59 families)" "$TMP/fam.out"
 check_grep "holdout side size" \
   "  holdout: 179 cases (14 families)" "$TMP/fam.out"
 check_grep "benign pool straddles the split (T3: both sides >=30)" \
@@ -926,7 +1022,7 @@ check_grep "evaluable tsv row shows zero gap" \
   "$(printf 'sudoers_change\t16\tchmod,install,sed,sudo,tee,visudo\t0\tno\tyes\tno\t-')" \
   "$ROOT/data/provisioning.tsv"
 
-echo "== dashboard data generator =="
+echo "== U2: dashboard data generator =="
 DD="$TMP/dashboard_data.json"
 python3 "$ROOT/tools/gen_dashboard_data.py" --out "$DD" >"$TMP/dd.out" 2>&1
 check "dashboard data generator exit code" "$?" "0"
@@ -934,6 +1030,12 @@ check "committed dashboard_data.json is byte-identical to regeneration" \
   "$(cmp -s "$ROOT/dashboard/dashboard_data.json" "$DD" && echo same)" "same"
 check_grep "generator discloses empty runs placeholder" \
   "runs: 0 (phase-2 placeholder; no real-machine run yet)" "$TMP/dd.out"
+check_grep "generator discloses catalog rows + clean sensitive scan" \
+  "cases: 1076 catalog rows, sensitive scan clean" "$TMP/dd.out"
+check_grep "generator discloses uncovered gap targets" \
+  "uncovered: 625 matrix techniques (gap contribution targets)" "$TMP/dd.out"
+check_grep "generator discloses benign distribution census" \
+  "benign distribution: 20 subfamilies, 120 cases (55 form + 65 persona)" "$TMP/dd.out"
 python3 - "$DD" "$ROOT" >"$TMP/ddcheck.out" 2>&1 <<'PYEOF'
 import hashlib
 import json
@@ -954,13 +1056,13 @@ if m["corpus_sha256"] != csha:
     bad.append("meta corpus_sha256 != corpus hash")
 if (m["version"], m["calibre"], m["attack_version"]) != ("2026.11", "v2.2", "20.1"):
     bad.append("meta version/calibre/attack_version %s" % m)
-if (t["cases"], t["fp"], t["attack"], t["classes"]) != (1075, 120, 955, 52):
+if (t["cases"], t["fp"], t["attack"], t["classes"]) != (1076, 120, 956, 52):
     bad.append("totals %s" % t)
 if t["cases"] != len(parse.all_cases(cases)) or t["fp"] != len(cases["false_positives"]):
     bad.append("totals drift from parse")
-if t["impact"] != {"none": 580, "temporary": 160, "destructive": 335}:
+if t["impact"] != {"none": 581, "temporary": 160, "destructive": 335}:
     bad.append("impact composition %s" % t["impact"])
-if t["attack_no_class"] != 20:
+if t["attack_no_class"] != 21:
     bad.append("attack_no_class %s" % t["attack_no_class"])
 cd = data["class_distribution"]
 if len(cd) != 52:
@@ -970,16 +1072,34 @@ for r in cd:
         bad.append("class equation %s" % r["class"])
 if sum(r["cases"] for r in cd) + t["attack_no_class"] != t["attack"]:
     bad.append("class + no-class != attack")
+# P0 (docs/16): per-class denominator transparency. expect_breakdown reconciles
+# to cases (silent=0, benign cases carry no class); mode_breakdown reconciles to
+# cases and aggregates to the corpus in-class mode split (bare-bench NOT-RUN
+# risk = sim-missing-bin).
+agg_mode = {"real": 0, "sim-missing-bin": 0, "sim-builtin": 0}
+for r in cd:
+    eb = r.get("expect_breakdown", {})
+    mb = r.get("mode_breakdown", {})
+    if eb.get("detectable", 0) + eb.get("gap", 0) + eb.get("silent", 0) != r["cases"]:
+        bad.append("expect_breakdown != cases %s" % r["class"])
+    if eb.get("detectable") != r["detectable"] or eb.get("gap") != r["gap"] or eb.get("silent") != 0:
+        bad.append("expect_breakdown drift %s" % r["class"])
+    if sum(mb.get(k, 0) for k in agg_mode) != r["cases"]:
+        bad.append("mode_breakdown != cases %s" % r["class"])
+    for k in agg_mode:
+        agg_mode[k] += mb.get(k, 0)
+if agg_mode != {"real": 538, "sim-missing-bin": 286, "sim-builtin": 111}:
+    bad.append("aggregate mode_breakdown %s" % agg_mode)
 if len(data["tactic_coverage"]) != 15:
     bad.append("tactic_coverage rows %d" % len(data["tactic_coverage"]))
 hm = data["technique_heatmap"]
-if len(hm) != m["techniques_covered"] or len(hm) != 80:
+if len(hm) != m["techniques_covered"] or len(hm) != 81:
     bad.append("heatmap count %d" % len(hm))
 for r in hm:
     if r["score"] < 1 or r["detectable"] + r["gap"] != r["score"]:
         bad.append("heatmap row %s" % r["techniqueID"])
 nl = data["navigator_layer"]
-if (nl["domain"], nl["versions"]["attack"], len(nl["techniques"])) != ("enterprise-attack", "20.1", 80):
+if (nl["domain"], nl["versions"]["attack"], len(nl["techniques"])) != ("enterprise-attack", "20.1", 81):
     bad.append("navigator_layer shape")
 if (p["corpus_classes"], p["evaluable_ref"], p["service_dep"]) != (52, 14, 21):
     bad.append("provisioning numbers %s" % p)
@@ -987,10 +1107,640 @@ if len(p["sim_only_classes"]) != 5 or len(p["rows"]) != 52:
     bad.append("provisioning sim_only/rows")
 if data["runs"] != []:
     bad.append("runs must stay empty (no real-machine run yet)")
+# P2 (docs/16): case catalog + class anchors/counterparts + public safety.
+cat = data["cases"]
+every = parse.all_cases(cases)
+if len(cat) != 1076 or len(cat) != t["cases"]:
+    bad.append("cases catalog count %d" % len(cat))
+if [c["id"] for c in cat] != [c["id"] for c in every]:
+    bad.append("cases catalog order != corpus order")
+if len({c["id"] for c in cat}) != len(cat):
+    bad.append("cases catalog duplicate ids")
+need = {"id", "name", "tactic", "technique", "technique_name", "platforms",
+        "mode", "bin", "expect", "expected_signals", "related_signals",
+        "impact", "bucket", "cmd", "creates_process"}
+byid = {c["id"]: c for c in every}
+for c in cat:
+    if set(c) != need:
+        bad.append("case fields %s" % c["id"]); break
+    if not isinstance(c["creates_process"], bool):
+        bad.append("creates_process not bool %s" % c["id"]); break
+    src = byid[c["id"]]
+    if c["cmd"] != src.get("cmd", "") or c["expect"] != src.get("expect"):
+        bad.append("case cmd/expect drift %s" % c["id"]); break
+    if c["technique_name"] and c["technique"] == "NONE":
+        bad.append("NONE technique carries a name %s" % c["id"]); break
+gap_rows = [c for c in cat if c["expect"] == "gap"]
+if len(gap_rows) != 21 or any(c["expected_signals"] for c in gap_rows):
+    bad.append("gap cases must be 21 with empty expected_signals")
+if sum(1 for c in cat if c["expect"] == "silent") != 120:
+    bad.append("silent case count")
+anch = {}
+for line in open(os.path.join(root, "data", "vocab-anchors.tsv"),
+                 encoding="ascii"):
+    if line.startswith("#") or not line.strip():
+        continue
+    p = line.rstrip("\n").split("\t")
+    if len(p) >= 2:
+        anch[p[0]] = p[1].split()
+for r in cd:
+    if not r["anchors"] or not r["counterpart"]:
+        bad.append("class anchors/counterpart empty %s" % r["class"])
+    if r["anchors"] != anch.get(r["class"]):
+        bad.append("anchors drift from vocab-anchors.tsv %s" % r["class"])
+unc = data["uncovered"]
+if len(unc) != 625:
+    bad.append("uncovered count %d" % len(unc))
+if len(hm) + len(unc) != m["matrix_techniques"]:
+    bad.append("covered + uncovered != matrix")
+covered_ids = {r["techniqueID"] for r in hm}
+for r in unc:
+    if r["techniqueID"] in covered_ids or not r["name"]:
+        bad.append("uncovered row %s" % r["techniqueID"]); break
+# P1 (docs/16): benign distribution reconciles with the family registry
+# (20 benign_ops_* subfamilies, 120 cases, form 55 / persona 65), and the
+# per-class adapter rule mappings reconcile with the adapter tables.
+bd = data.get("benign_distribution")
+if not bd:
+    bad.append("benign_distribution missing")
+else:
+    reg, reg_group = {}, {}
+    for line in open(os.path.join(root, "data", "family-registry.tsv"),
+                     encoding="ascii"):
+        if line.startswith("#") or not line.strip():
+            continue
+        p = line.rstrip("\n").split("\t")
+        if len(p) >= 3 and p[2] == "benign":
+            reg[p[1]] = reg.get(p[1], 0) + 1
+            g = "form" if int(p[0][2:]) <= 56 else "persona"
+            reg_group.setdefault(p[1], set()).add(g)
+    if len(bd) != 20 or len(reg) != 20:
+        bad.append("benign subfamily count %d/%d" % (len(bd), len(reg)))
+    if sum(r["cases"] for r in bd) != 120 or t["fp"] != 120:
+        bad.append("benign distribution sum != 120")
+    form = sum(r["cases"] for r in bd if r["group"] == "form")
+    persona = sum(r["cases"] for r in bd if r["group"] == "persona")
+    if (form, persona) != (55, 65):
+        bad.append("benign group split %d/%d" % (form, persona))
+    if {r["subfamily"] for r in bd} != set(reg):
+        bad.append("benign subfamily set != registry")
+    cat_ids = {c["id"] for c in cat}
+    for r in bd:
+        if not r["subfamily"].startswith("benign_ops_"):
+            bad.append("subfamily prefix %s" % r["subfamily"])
+        if r["cases"] != reg.get(r["subfamily"]):
+            bad.append("subfamily count drift %s" % r["subfamily"])
+        if reg_group.get(r["subfamily"]) != {r["group"]}:
+            bad.append("subfamily group mismatch %s" % r["subfamily"])
+        if not 1 <= len(r["examples"]) <= 3:
+            bad.append("examples length %s" % r["subfamily"])
+        if not set(r["examples"]) <= cat_ids:
+            bad.append("examples not in catalog %s" % r["subfamily"])
+xz = json.load(open(os.path.join(root, "adapters", "xiezhi",
+                                 "rule_map.json"), encoding="utf-8"))
+wz = json.load(open(os.path.join(root, "adapters", "wazuh",
+                                 "rule_map.json"), encoding="utf-8"))
+ec = json.load(open(os.path.join(root, "adapters", "wazuh",
+                                 "execve_classify.json"), encoding="utf-8"))
+xz_by, wz_by, ec_by = {}, {}, {}
+for rule, cls in xz.items():
+    xz_by.setdefault(cls, []).append(rule)
+for rule, cls in wz.items():
+    wz_by.setdefault(cls, []).append(rule)
+for e in ec:
+    ec_by[e["signal_class"]] = ec_by.get(e["signal_class"], 0) + 1
+for r in cd:
+    ar = r.get("adapter_rules")
+    if not ar:
+        bad.append("adapter_rules missing %s" % r["class"]); continue
+    by_adapter = {a["adapter"]: a for a in ar}
+    if set(by_adapter) != {"xiezhi", "wazuh"}:
+        bad.append("adapter set %s" % r["class"]); continue
+    if sorted(by_adapter["xiezhi"]["rules"]) != sorted(xz_by.get(r["class"], [])):
+        bad.append("xiezhi rules drift %s" % r["class"])
+    if sorted(by_adapter["wazuh"]["rules"]) != sorted(wz_by.get(r["class"], [])):
+        bad.append("wazuh rules drift %s" % r["class"])
+    if by_adapter["wazuh"]["execve_classifiers"] != ec_by.get(r["class"], 0):
+        bad.append("execve classifiers drift %s" % r["class"])
+import gen_dashboard_data as gdd
+hits = gdd.sensitive_hits(open(sys.argv[1], encoding="utf-8").read())
+if hits:
+    bad.append("sensitive scan hits %s" % hits[:3])
+if not gdd.sensitive_hits("password=Sup3rSecret123 10.238.0.5 F:/repo"):
+    bad.append("sensitive scan is vacuous (must fire on planted material)")
 print("dd-ok" if not bad else "dd-broken: " + "; ".join(bad))
 PYEOF
 check "dashboard data reconciles with corpus + coverage + provisioning" \
   "$(cat "$TMP/ddcheck.out")" "dd-ok"
+
+echo "== C6/C11: statistical disclosure + latency honesty (docs/11) =="
+CJSON="$TMP/c11.json"
+python3 "$ROOT/tools/scorer.py" "$FIX/mini.yaml" "$FIX/exec.log" \
+  "$FIX/alerts-complete.json" --out-json "$CJSON" --out "$TMP/c11.md" >/dev/null 2>&1
+check "scorer C11 exit code" "$?" "0"
+check_grep "disclosure section present" "### Statistical disclosure" "$TMP/c11.md"
+check_grep "no natural total score disclosed" "No natural total score" "$TMP/c11.md"
+check_grep "latency HIT-subset + negative drop disclosed" \
+  "negative latencies dropped: 0" "$TMP/c11.md"
+check_grep "0-FP not zero-width disclosed" "zero-width interval" "$TMP/c11.md"
+python3 - "$CJSON" "$ROOT" "$FIX" >"$TMP/c11check.out" 2>&1 <<'PYEOF'
+import json, sys, datetime, tempfile, os
+sys.path.insert(0, os.path.join(sys.argv[2], "tools"))
+import scorer, stats
+d = json.load(open(sys.argv[1], encoding="utf-8"))
+bad = []
+if d["detection"].get("signal_ci95") is None: bad.append("signal_ci95")
+if d["fp"].get("attempt_upper95") is None: bad.append("attempt_upper95")
+if d.get("aggregation", {}).get("total_score") is not None: bad.append("total_score")
+if not all("latency_n" in r and "hit_ci95" in r for r in d["per_class"]):
+    bad.append("per_class latency_n/hit_ci95")
+if round(stats.upper_bound(0, 120) * 100, 2) != 2.47: bad.append("0/120 upper")
+hdr, rows, end = scorer.parse_exec_log(os.path.join(sys.argv[3], "q4.log"))
+t02 = [r for r in rows if r["id"] == "T02"][0]
+data = json.load(open(os.path.join(sys.argv[3], "q4-a.json"), encoding="utf-8"))
+ms = t02["start_ms"] - 100
+for a in data["alerts"]:
+    a["timestamp"] = datetime.datetime.fromtimestamp(
+        ms / 1000, datetime.timezone.utc).strftime("%Y-%m-%dT%H:%M:%S.") + "%03dZ" % (ms % 1000)
+p = tempfile.NamedTemporaryFile("w", suffix=".json", delete=False)
+json.dump(data, p); p.close()
+j = {}
+rep, kind = scorer.build_report(os.path.join(sys.argv[3], "mini.yaml"),
+                                os.path.join(sys.argv[3], "q4.log"),
+                                p.name, "high", 3500, json_out=j)
+os.unlink(p.name)
+if j["latency"]["negative_dropped"] != 1: bad.append("negative_dropped != 1")
+if "negative latencies dropped: 1" not in rep: bad.append("neg disclosure")
+print("c11-ok" if not bad else "c11-broken: " + "; ".join(bad))
+PYEOF
+check "C11 intervals + C6 negative-latency counter" \
+  "$(cat "$TMP/c11check.out")" "c11-ok"
+check_grep "pre-C12 log disclosed not-recorded" "order_sha=not-recorded" "$TMP/c11.md"
+
+echo "== C9/C12: fair-config freeze + run state/order/reset (docs/11) =="
+check_grep "runner header freezes order hash" 'order_sha=%s' "$ROOT/tools/runner.sh"
+check_grep "runner header declares seed/state/round/reset/log_loss" \
+  'seed=none order_sha=%s state=cold round=1 reset=%s log_loss=na' "$ROOT/tools/runner.sh"
+C12REP="$TMP/c12.md"
+python3 "$ROOT/tools/scorer.py" "$FIX/mini.yaml" "$FIX/exec-c12.log" \
+  "$FIX/alerts-complete.json" --out "$C12REP" --out-json "$TMP/c12.json" >/dev/null 2>&1
+check "scorer C12 fixture exit code" "$?" "0"
+check_grep "run state disclosed with order hash" "order_sha=abc123def456" "$C12REP"
+check_grep "run state cold + reset disclosed" "state=cold round=1 reset=87" "$C12REP"
+python3 - "$TMP/c12.json" "$ROOT" >"$TMP/c12check.out" 2>&1 <<'PYEOF'
+import json, sys
+d = json.load(open(sys.argv[1], encoding="utf-8"))
+rs = d["meta"]["run_state"]
+m = json.load(open(sys.argv[2] + "/benchmark-manifest.json", encoding="utf-8"))
+bad = []
+if rs["order_sha"] != "abc123def456": bad.append("order_sha")
+if rs["state"] != "cold" or rs["reset"] != "87": bad.append("state/reset")
+fc = m.get("fair_config", {})
+if not fc.get("profile") or not fc.get("applicable_scope"): bad.append("fair_config")
+print("c12-ok" if not bad else "c12-broken: " + "; ".join(bad))
+PYEOF
+check "C12 run_state JSON + C9 fair_config present" \
+  "$(cat "$TMP/c12check.out")" "c12-ok"
+check_grep "manifest_check reports fair_config ok" "fair_config" "$TMP/mf.out"
+python3 - "$ROOT/benchmark-manifest.json" "$TMP/nofc.json" <<'PYEOF'
+import json, sys
+m = json.load(open(sys.argv[1], encoding="utf-8"))
+m.pop("fair_config", None)
+json.dump(m, open(sys.argv[2], "w", encoding="utf-8"))
+PYEOF
+python3 "$ROOT/tools/manifest_check.py" --repo "$ROOT" \
+  --manifest "$TMP/nofc.json" >"$TMP/nofc.out" 2>&1
+check "missing fair_config turns gate red" "$?" "1"
+check_grep "fair_config failure named" "FAIL fair_config" "$TMP/nofc.out"
+
+echo "== C7/C6: observation contract + time fields (docs/11) =="
+python3 "$ROOT/tools/observation_lint.py" >"$TMP/obs.out" 2>&1
+check "observation lint exit code" "$?" "0"
+check_grep "observation contract covers 52 classes" \
+  "observation contract: 52/52 classes covered" "$TMP/obs.out"
+C7REP="$TMP/c7.md"
+python3 "$ROOT/tools/scorer.py" "$FIX/c7.yaml" "$FIX/c7.log" \
+  "$FIX/alerts-c7.json" --verbose --out "$C7REP" --out-json "$TMP/c7.json" >/dev/null 2>&1
+check "scorer C7 fixture exit code" "$?" "0"
+check "KM01 not-measured (module_load unexported)" \
+  "$(row_verdict KM01 "$C7REP")" "NOT-MEASURED (module_load) | -"
+check "EX01 still HIT (execve exported)" \
+  "$(row_verdict EX01 "$C7REP")" "HIT | yes"
+check_grep "not-measured disclosure" "not-measured: 1" "$C7REP"
+check_grep "C6 clock domain disclosed" "clock domain: source_event_time" "$C7REP"
+python3 - "$TMP/c7.json" >"$TMP/c7check.out" 2>&1 <<'PYEOF'
+import json, sys
+d = json.load(open(sys.argv[1], encoding="utf-8"))
+bad = []
+if d["detection"]["not_measured"] != 1: bad.append("not_measured")
+if d["detection"]["detectable"] != 1 or d["detection"]["hit"] != 1:
+    bad.append("measured-only denominator")
+if d["latency"]["clock_domains"] != ["source_event_time"]: bad.append("clock_domains")
+km = [r for r in d["per_class"] if r["class"] == "kernel_module_load"][0]
+if km["not_measured"] != 1 or \
+        km["cases"] != km["detected"] + km["missed"] + km["not_measured"]:
+    bad.append("km reconcile")
+ex = [r for r in d["per_class"] if r["class"] == "net_scan_external"][0]
+if ex["median_latency_ms"] != 500: bad.append("C6 source_event_time latency")
+print("c7-ok" if not bad else "c7-broken: " + "; ".join(bad))
+PYEOF
+check "C7 not_measured exclusion + C6 source_event_time latency" \
+  "$(cat "$TMP/c7check.out")" "c7-ok"
+
+echo "== C8: process identity adapter + strict view (xiezhi delivery) =="
+python3 - "$ROOT" "$FIX" "$TMP" >"$TMP/c8ad.out" 2>&1 <<'PYEOF'
+import json, os, sys, io, contextlib
+root, fix, tmp = sys.argv[1], sys.argv[2], sys.argv[3]
+sys.path.insert(0, os.path.join(root, "adapters", "xiezhi"))
+import alerts_to_canonical as ad
+raw = [
+ {"ts": "2026-11-16T08:33:22Z", "ts_ms": 1794818002000, "severity": "high",
+  "rule_id": "exec-recon-nmap", "agent_id": "h1", "hostname": "selftest",
+  "mitre": "T1046",
+  "process": {"pid": 100, "ppid": 1, "uid": 0, "exe": "/usr/bin/nmap",
+              "comm": "nmap", "argv": ["nmap", "-sS"], "auid": -1}},
+ {"ts": "2026-11-16T08:33:23Z", "ts_ms": 1794818003000, "severity": "low",
+  "rule_id": "deadman/agent_offline", "agent_id": "h1", "hostname": "selftest"},
+]
+rp = os.path.join(tmp, "c8raw.json"); json.dump(raw, open(rp, "w"))
+op = os.path.join(tmp, "c8canon.json")
+with contextlib.redirect_stdout(io.StringIO()):
+    ad.convert(rp, os.path.join(fix, "exec.log"), op, True)
+by = {a["rule_id"]: a for a in json.load(open(op))["alerts"]}
+bad = []
+p = by["exec-recon-nmap"].get("process")
+if not p or p.get("pid") != 100 or p.get("comm") != "nmap":
+    bad.append("execve process mapped")
+if p and "auid" in p: bad.append("auid -1 must be dropped")
+if by["exec-recon-nmap"]["raw_log"] != "nmap -sS": bad.append("raw_log argv join")
+if not by["exec-recon-nmap"]["event_uid"]: bad.append("event_uid ack key")
+if by["deadman/agent_offline"].get("process") is not None:
+    bad.append("non-execve must lack process")
+print("c8ad-ok" if not bad else "c8ad-broken: " + "; ".join(bad))
+PYEOF
+check "adapter maps process (O6/O7, auid unset dropped)" \
+  "$(cat "$TMP/c8ad.out")" "c8ad-ok"
+C8REP="$TMP/c8.md"
+python3 "$ROOT/tools/scorer.py" "$FIX/c8.yaml" "$FIX/c8.log" \
+  "$FIX/alerts-c8.json" --out "$C8REP" --out-json "$TMP/c8.json" >/dev/null 2>&1
+check "scorer C8 fixture exit code" "$?" "0"
+check_grep "strict process view header" "### Strict process view (C8" "$C8REP"
+check_grep "coherence counts" "coherent=1 incoherent=1 unattributable=1" "$C8REP"
+python3 - "$TMP/c8.json" >"$TMP/c8check.out" 2>&1 <<'PYEOF'
+import json, sys
+d = json.load(open(sys.argv[1], encoding="utf-8"))
+sp = d["strict_process"]; bad = []
+if (sp["coherent"], sp["incoherent"], sp["unattributable"]) != (1, 1, 1):
+    bad.append("counts")
+if sp["auid_available"] is not False: bad.append("auid_available")
+if d["detection"]["hit"] != 3: bad.append("primary verdicts unchanged")
+print("c8-ok" if not bad else "c8-broken: " + "; ".join(bad))
+PYEOF
+check "C8 strict view buckets + primary unchanged" \
+  "$(cat "$TMP/c8check.out")" "c8-ok"
+
+echo "== G3: detection quality tiers (MITRE-style, docs/13) =="
+G3REP="$TMP/g3.md"
+python3 "$ROOT/tools/scorer.py" "$FIX/g3.yaml" "$FIX/g3.log" \
+  "$FIX/alerts-g3.json" --out "$G3REP" --out-json "$TMP/g3.json" >/dev/null 2>&1
+check "scorer G3 fixture exit code" "$?" "0"
+check_grep "tiers header" "### Detection quality tiers (G3" "$G3REP"
+check_grep "overall tier counts" "technique=1 tactic=1 general=1 none=0" "$G3REP"
+python3 - "$TMP/g3.json" >"$TMP/g3check.out" 2>&1 <<'PYEOF'
+import json, sys
+d = json.load(open(sys.argv[1], encoding="utf-8"))
+t = d["tiers"]["totals"]; bad = []
+if (t["technique"], t["tactic"], t["general"], t["none"]) != (1, 1, 1, 0):
+    bad.append("tier totals")
+if d["detection"]["hit"] != 3: bad.append("verdicts unchanged")
+print("g3-ok" if not bad else "g3-broken: " + "; ".join(bad))
+PYEOF
+check "G3 tiers technique/tactic/general + verdicts unchanged" \
+  "$(cat "$TMP/g3check.out")" "g3-ok"
+
+echo "== G5: CALDERA/stockpile chain import proposal (docs/13) =="
+python3 - "$ROOT" >"$TMP/cal.out" 2>&1 <<'PYEOF'
+import sys, os
+root = sys.argv[1]
+sys.path.insert(0, os.path.join(root, "tools"))
+from parse import parse_lines, validate
+text = open(os.path.join(root, "tests", "fixture", "caldera",
+                         "caldera-import-r1.yaml"),
+            encoding="ascii").read()
+cases = parse_lines(text.splitlines())
+bad = []
+if validate(cases): bad.append("validate")
+atk = cases["attacks"]
+if len(atk) != 3: bad.append("count")
+if sum(1 for c in atk if c.get("bucket") == "chain-CAL1") != 2:
+    bad.append("chain bucket")
+if sum(1 for c in atk if c["expect"] == "detectable") != 2:
+    bad.append("detectable")
+print("cal-ok" if not bad else "cal-broken: " + "; ".join(bad))
+PYEOF
+check "caldera chain proposal validates + chain bucket" \
+  "$(cat "$TMP/cal.out")" "cal-ok"
+
+echo "== P2: dashboard HTTP surface =="
+# Render the real SSR pages over HTTP and assert the user-observable behavior:
+# catalog counts/filter/search/pagination, detail four sections + 404, gap CTA,
+# and a sensitive scan of the served bytes. Needs Go (same guard as gate 4);
+# without Go the data gates above still run and this section skips loudly.
+if command -v go >/dev/null 2>&1; then
+  P2BIN="$TMP/dash-p2.exe"
+  (cd "$ROOT/dashboard" && go build -o "$P2BIN" .) >"$TMP/p2build.log" 2>&1
+  check "P2 dashboard binary builds" "$?" "0"
+  P2PORT=21399
+  "$P2BIN" --addr "127.0.0.1:$P2PORT" \
+    --data "$ROOT/dashboard/dashboard_data.json" >"$TMP/p2srv.log" 2>&1 &
+  P2PID=$!
+  P2B="http://127.0.0.1:$P2PORT"
+  ready=no
+  for _ in 1 2 3 4 5 6 7 8 9 10; do
+    if [ "$(curl -s --noproxy '*' -o /dev/null -w '%{http_code}' "$P2B/healthz")" = "200" ]; then
+      ready=yes; break
+    fi
+    sleep 0.3
+  done
+  check "P2 server reaches healthz" "$ready" "yes"
+  curl -s --noproxy '*' "$P2B/cases" >"$TMP/p2-cases.html"
+  curl -s --noproxy '*' "$P2B/cases?expect=gap" >"$TMP/p2-gap.html"
+  curl -s --noproxy '*' "$P2B/cases?tactic=BENIGN" >"$TMP/p2-benign.html"
+  curl -s --noproxy '*' "$P2B/cases?q=NMAP" >"$TMP/p2-search.html"
+  curl -s --noproxy '*' "$P2B/cases?q=zzznomatch" >"$TMP/p2-empty.html"
+  curl -s --noproxy '*' "$P2B/cases?page=2" >"$TMP/p2-page2.html"
+  curl -s --noproxy '*' "$P2B/case?id=E01" >"$TMP/p2-e01.html"
+  curl -s --noproxy '*' "$P2B/case?id=S01" >"$TMP/p2-s01.html"
+  curl -s --noproxy '*' "$P2B/matrix" >"$TMP/p2-matrix.html"
+  curl -s --noproxy '*' "$P2B/scores" >"$TMP/p2-scores.html"
+  curl -s --noproxy '*' "$P2B/scores?lang=zh" >"$TMP/p2-scores-zh.html"
+  curl -s --noproxy '*' "$P2B/coverage" >"$TMP/p2-coverage.html"
+  curl -s --noproxy '*' "$P2B/" >"$TMP/p2-overview.html"
+  curl -s --noproxy '*' "$P2B/classes" >"$TMP/p2-classes.html"
+  curl -s --noproxy '*' "$P2B/fp" >"$TMP/p2-fp.html"
+  curl -s --noproxy '*' "$P2B/fp?lang=zh" >"$TMP/p2-fp-zh.html"
+  curl -s --noproxy '*' "$P2B/case?id=FP01" >"$TMP/p2-fp01.html"
+  curl -s --noproxy '*' "$P2B/case?id=E01&lang=zh" >"$TMP/p2-e01-zh.html"
+  p2nope=$(curl -s --noproxy '*' -o /dev/null -w '%{http_code}' "$P2B/case?id=NOPE")
+  p2fpcode=$(curl -s --noproxy '*' -o /dev/null -w '%{http_code}' "$P2B/fp")
+  kill "$P2PID" 2>/dev/null
+  wait "$P2PID" 2>/dev/null
+  check_grep "catalog full count badge 1076" 'tag count">1076' "$TMP/p2-cases.html"
+  check_grep "catalog filter expect=gap narrows to 21" 'tag count">21' "$TMP/p2-gap.html"
+  check_grep "catalog filter tactic=BENIGN narrows to 120" 'tag count">120' "$TMP/p2-benign.html"
+  check_grep "catalog search case-insensitive (q=NMAP)" 'nmap' "$TMP/p2-search.html"
+  check_grep "catalog empty search renders no-match row" 'No cases match the current filter.' "$TMP/p2-empty.html"
+  check_not_grep "catalog page 2 drops the first case FP01" '>FP01<' "$TMP/p2-page2.html"
+  check_grep "detail renders ATT&CK technique link" 'attack.mitre.org/techniques/T1059.004/' "$TMP/p2-e01.html"
+  check_grep "detail renders signal-class counterpart" 'Sigma curl pipe shell' "$TMP/p2-e01.html"
+  check_grep "detail gap case discloses coverage hole" 'gap — no signal class' "$TMP/p2-s01.html"
+  check "detail unknown id returns 404" "$p2nope" "404"
+  check_grep "matrix gap CTA links public issues" 'github.com/xycxmz/qinjing-public/issues' "$TMP/p2-matrix.html"
+  check_grep "matrix lists uncovered techniques" 'Uncovered techniques' "$TMP/p2-matrix.html"
+  check_grep "matrix Navigator semantics legend" 'Navigator layer semantics' "$TMP/p2-matrix.html"
+  python3 - "$TMP" "$ROOT" >"$TMP/p2scan.out" 2>&1 <<'PYEOF'
+import glob
+import os
+import sys
+
+sys.path.insert(0, os.path.join(sys.argv[2], "tools"))
+import gen_dashboard_data as gdd
+
+bad = []
+for p in sorted(glob.glob(os.path.join(sys.argv[1], "p2-*.html"))):
+    hits = gdd.sensitive_hits(open(p, encoding="utf-8").read())
+    if hits:
+        bad.append("%s: %s" % (os.path.basename(p), hits[:2]))
+print("p2-scan-clean" if not bad else "p2-scan-broken: " + "; ".join(bad))
+PYEOF
+  check "served P2 pages pass sensitive scan" "$(cat "$TMP/p2scan.out")" "p2-scan-clean"
+  # P0 (docs/16): statistical honesty disclosure on the committed-data pages.
+  # The methodology panel + G3 tier palette/semantic axis are framework-ready
+  # (render with zero runs); the census banner separates coverage from detection.
+  check_grep "scores methodology panel renders with empty runs" 'Statistical methodology' "$TMP/p2-scores.html"
+  check_grep "scores discloses Clopper-Pearson exact intervals" 'Clopper-Pearson' "$TMP/p2-scores.html"
+  check_grep "scores discloses independence limitation" 'Independence limitation' "$TMP/p2-scores.html"
+  check_grep "scores discloses no total score" 'No total score' "$TMP/p2-scores.html"
+  check_grep "scores G3 tier palette legend present" 'tier-technique' "$TMP/p2-scores.html"
+  check_grep "scores specificity semantic axis present" 'More specific' "$TMP/p2-scores.html"
+  check_grep "scores empty state stays pending (no run)" 'Pending real-machine measurement' "$TMP/p2-scores.html"
+  check_grep "zh scores methodology renders Chinese" '统计方法论' "$TMP/p2-scores-zh.html"
+  check_grep "overview census banner present" 'Coverage is not a detection rate.' "$TMP/p2-overview.html"
+  check_grep "coverage census banner present" 'Coverage is not a detection rate.' "$TMP/p2-coverage.html"
+  check_grep "coverage denominator disclosed as census" 'coverage census, not a detection denominator' "$TMP/p2-coverage.html"
+  check_grep "classes mode-breakdown denominator banner" 'Denominator transparency.' "$TMP/p2-classes.html"
+  check_grep "classes shows sim-missing-bin NOT-RUN risk" 'NOT-RUN on a bare reference bench' "$TMP/p2-classes.html"
+  check_not_grep "committed scores page renders no synthetic run badge" 'demo-badge' "$TMP/p2-scores.html"
+  check_not_grep "committed empty scores renders no scatter SVG" '<svg' "$TMP/p2-scores.html"
+  check_grep "committed scores shows FPR heatmap section" 'FPR heatmap' "$TMP/p2-scores.html"
+  check_grep "committed scores heatmap honest empty state" 'activates when a real run is scored' "$TMP/p2-scores.html"
+
+  # P3 (docs/16): reproducibility + version governance framework. The
+  # cross-version incomparability banner and the methodology panels are
+  # framework-ready (render with zero runs); the archive toggle and the
+  # per-run evidence links stay absent until a run exists.
+  check_grep "scores cross-version incomparability banner" 'Runs are comparable only within the same version and environment.' "$TMP/p2-scores.html"
+  check_grep "scores banner pins the benchmark versions" 'Versions are pinned' "$TMP/p2-scores.html"
+  check_grep "scores banner cites the input sha triple" 'exec-log-sha256' "$TMP/p2-scores.html"
+  check_grep "scores reproducibility methodology panel" 'Reproducibility and the input triple' "$TMP/p2-scores.html"
+  check_grep "scores reproducibility cites docs/03 D9" 'docs/03 D9' "$TMP/p2-scores.html"
+  check_grep "scores version governance methodology panel" 'Version governance and archiving' "$TMP/p2-scores.html"
+  check_grep "scores archive policy retire not delete" 'archived, not deleted' "$TMP/p2-scores.html"
+  check_grep "scores label source methodology panel" 'Label source' "$TMP/p2-scores.html"
+  check_grep "scores label source Tech-tag native only" 'Tech-tag column counts native labels only' "$TMP/p2-scores.html"
+  check_grep "scores run modifiers methodology panel" 'Run modifiers' "$TMP/p2-scores.html"
+  check_grep "scores modifiers name Configuration Change" 'Configuration Change' "$TMP/p2-scores.html"
+  check_grep "scores cost and latency methodology panel" 'Cost and latency' "$TMP/p2-scores.html"
+  check_not_grep "committed empty scores renders no archive toggle" 'Show archived runs' "$TMP/p2-scores.html"
+  check_not_grep "committed empty scores renders no evidence links" 'Raw evidence' "$TMP/p2-scores.html"
+  check_grep "zh scores cross-version banner renders Chinese" '仅同版本同环境' "$TMP/p2-scores-zh.html"
+  check_grep "zh scores reproducibility methodology renders Chinese" '复现与输入三元组' "$TMP/p2-scores-zh.html"
+
+  # P1 (docs/16): the standalone /fp page. Benign distribution reconciles to
+  # 120 (form 55 / persona 65), the tight-window methodology panel is live with
+  # zero runs, the tradeoff carries the FP03 precedent, and the violation table
+  # stays an honest empty state until a real run exists.
+  check "fp page returns 200" "$p2fpcode" "200"
+  check_grep "fp benign total badge 120" 'tag count">120' "$TMP/p2-fp.html"
+  check_grep "fp form group subtotal 55" 'tag count">55' "$TMP/p2-fp.html"
+  check_grep "fp persona group subtotal 65" 'tag count">65' "$TMP/p2-fp.html"
+  check_grep "fp lists a form subfamily" 'benign_ops_devbuild' "$TMP/p2-fp.html"
+  check_grep "fp lists a persona subfamily" 'benign_ops_sysadmin' "$TMP/p2-fp.html"
+  check_grep "fp representative case links to detail" '/case?id=FP01' "$TMP/p2-fp.html"
+  check_grep "fp methodology discloses the 2500ms tail window" '2500' "$TMP/p2-fp.html"
+  check_grep "fp methodology discloses the high+ gate" 'high and critical' "$TMP/p2-fp.html"
+  check_grep "fp methodology discloses the verify_rc tiers" 'verify_rc' "$TMP/p2-fp.html"
+  check_grep "fp methodology discloses fp-uid cross-talk check" 'fp-uid' "$TMP/p2-fp.html"
+  check_grep "fp methodology discloses bin=0 NOT-RUN" 'bin_found=0' "$TMP/p2-fp.html"
+  check_grep "fp methodology discloses the integrity gate" 'fetch.complete' "$TMP/p2-fp.html"
+  check_grep "fp tradeoff illustrates calibre A cost abstractly" 'Calibre A tradeoff' "$TMP/p2-fp.html"
+  check_grep "fp tradeoff explains medium flags benign FP" 'FALSE POSITIVE' "$TMP/p2-fp.html"
+  check_not_grep "fp page publishes no real product measurement" 'Wazuh 4.14.10' "$TMP/p2-fp.html"
+  check_grep "fp tradeoff links the scores scatter" '/scores' "$TMP/p2-fp.html"
+  check_grep "fp differentiation names ART and CALDERA" 'CALDERA' "$TMP/p2-fp.html"
+  check_grep "fp violation table honest empty state" 'No real-machine run yet.' "$TMP/p2-fp.html"
+  check_not_grep "committed fp page renders no synthetic badge" 'demo-badge' "$TMP/p2-fp.html"
+  check_grep "zh fp renders Chinese methodology" '紧窗误报方法论' "$TMP/p2-fp-zh.html"
+  check_grep "zh fp renders Chinese distribution heading" '良性语料分布' "$TMP/p2-fp-zh.html"
+
+  # P1 (docs/16): /case detection evidence. The expected detection profile
+  # maps each expected class to its adapter rules; the G3 tier legend and the
+  # scorer per-case follow-up disclosure render with zero runs; benign and gap
+  # cases are handled honestly.
+  check_grep "case evidence section heading" '5. Detection evidence' "$TMP/p2-e01.html"
+  check_grep "case expected detection profile" 'Expected detection profile' "$TMP/p2-e01.html"
+  check_grep "case profile lists the xiezhi seed rule" 'exec-curl-pipe-shell' "$TMP/p2-e01.html"
+  check_grep "case profile lists execve argv classifiers" 'execve argv' "$TMP/p2-e01.html"
+  check_grep "case evidence G3 tier legend" 'tier-technique' "$TMP/p2-e01.html"
+  check_grep "case evidence scorer per-case follow-up" 'scorer --out-json' "$TMP/p2-e01.html"
+  check_grep "case evidence links scores per-class table" '/scores' "$TMP/p2-e01.html"
+  check_grep "benign case evidence links fp methodology" 'Benign case: a correct HIDS' "$TMP/p2-fp01.html"
+  check_grep "benign case evidence links /fp" 'href="/fp"' "$TMP/p2-fp01.html"
+  check_grep "gap case evidence discloses no mapping" 'no adapter mapping applies' "$TMP/p2-s01.html"
+  check_grep "zh case evidence renders Chinese heading" '检测证据' "$TMP/p2-e01-zh.html"
+
+  # P0 SYNTHETIC chart rendering (docs/16 C5/C6). A test-only fixture injects
+  # synthetic runs into a COPY of the committed data written under $TMP (never
+  # the shipped artifact), served by a separate instance. This proves the
+  # scatter SVG + FPR heatmap render and are labelled SYNTHETIC, while the
+  # shipped runs[] stays empty and the public pages carry no synthetic data.
+  python3 - "$ROOT/dashboard/dashboard_data.json" "$TMP/synthetic_data.json" >"$TMP/syn.out" 2>&1 <<'PYEOF'
+import json, sys
+data = json.load(open(sys.argv[1], encoding="utf-8"))
+sha = data["meta"]["corpus_sha256"]
+def run(rid, product, hit, viol, arate, fpr_a, fpr_b):
+    return {
+        "run_id": rid, "product": product, "timestamp": "2026-11-21T00:00:00Z",
+        "synthetic": True,
+        "meta": {"corpus_sha256": sha, "calibre": "v2.2", "min_severity": "high",
+                 "grace_ms": 3500, "run_kind": "COMPLETE", "host": "selftest",
+                 "target_kernel": "5.99-test", "target_distro": "Test OS 7"},
+        "totals": data["totals"],
+        "detection": {"detectable": 100, "hit": hit, "strict": hit - 10,
+                      "anyhit": hit + 5, "notrun": 0, "transport_invalid": 0,
+                      "not_measured": 0, "signal_rate": hit / 100.0,
+                      "strict_rate": (hit - 10) / 100.0, "anyhit_rate": (hit + 5) / 100.0,
+                      "signal_ci95": [0.7, 0.9]},
+        "fp": {"evaluable": 120, "verified": 100, "attempt": 20, "legacy": 0,
+               "violations": viol, "violations_verified": viol - 2,
+               "verified_rate": (viol - 2) / 100.0, "attempt_rate": arate,
+               "attempt_upper95": arate + 0.04},
+        "per_class": [
+            {"class": "net_scan_external", "cases": 10, "detected": 9, "missed": 1,
+             "not_measured": 0, "median_latency_ms": 500, "tech_tagged": 8,
+             "latency_n": 9, "negative_dropped": 0, "hit_ci95": [0.55, 0.99], "fpr": fpr_a},
+            {"class": "archive_staging", "cases": 8, "detected": 5, "missed": 3,
+             "not_measured": 0, "median_latency_ms": 800, "tech_tagged": 4,
+             "latency_n": 5, "negative_dropped": 0, "hit_ci95": [0.3, 0.9], "fpr": fpr_b},
+            {"class": "download_and_execute", "cases": 10, "detected": 8, "missed": 2,
+             "not_measured": 0, "median_latency_ms": 600, "tech_tagged": 6,
+             "latency_n": 8, "negative_dropped": 0, "hit_ci95": [0.5, 0.95], "fpr": 0.0}],
+        "by_tactic": [], "by_technique": [],
+        "latency": {"subset": "HIT-only", "negative_dropped": 0,
+                    "calibre": "attribution-window proxy, not MTTD"},
+        "aggregation": {"micro_signal_rate": hit / 100.0, "macro_signal_rate": 0.75,
+                        "total_score": None, "note": "no natural total score"},
+        "strict_process": {"coherent": hit, "incoherent": 0, "unattributable": 0,
+                           "auid_available": False, "note": "coherence cross-check"},
+        "tiers": {"totals": {"technique": 50, "tactic": 20, "general": 10, "none": 0},
+                  "per_class": [
+                      {"class": "net_scan_external", "technique": 7, "tactic": 2, "general": 1, "none": 0},
+                      {"class": "archive_staging", "technique": 3, "tactic": 2, "general": 0, "none": 0},
+                      {"class": "download_and_execute", "technique": 6, "tactic": 2, "general": 0, "none": 0}],
+                  "note": "additive"},
+        "artifact_report": "artifacts/%s/report.md" % rid,
+        "artifact_exec_log": "artifacts/%s/exec.log" % rid,
+        "artifact_alerts": "artifacts/%s/alerts.json" % rid,
+        "version": "2026.11", "deprecated": False,
+        "label_source_counts": {"native": hit, "adapter": 5, "reviewer": 2},
+        "modifiers": ["Configuration Change"], "duration_ms": 123456,
+    }
+archived = run("syn-003", "SYNTHETIC-ARCHIVED", 50, 8, 0.08, 0.10, 0.30)
+archived["deprecated"] = True
+archived["modifiers"] = ["Delayed"]
+data["runs"] = [run("syn-001", "SYNTHETIC-A", 80, 6, 0.05, 0.02, 0.25),
+                run("syn-002", "SYNTHETIC-B", 60, 12, 0.10, 0.08, 0.40),
+                archived]
+with open(sys.argv[2], "w", encoding="ascii", newline="\n") as fh:
+    json.dump(data, fh, indent=1)
+print("syn-fixture-written")
+PYEOF
+  check "SYNTHETIC fixture written to TMP only" "$(cat "$TMP/syn.out")" "syn-fixture-written"
+  check "shipped artifact runs[] stays empty after fixture" \
+    "$(python3 -I -c 'import json,sys;print(len(json.load(open(sys.argv[1],encoding="utf-8"))["runs"]))' "$ROOT/dashboard/dashboard_data.json")" "0"
+  P0PORT=21400
+  "$P2BIN" --addr "127.0.0.1:$P0PORT" --data "$TMP/synthetic_data.json" >"$TMP/p0srv.log" 2>&1 &
+  P0PID=$!
+  P0B="http://127.0.0.1:$P0PORT"
+  p0ready=no
+  for _ in 1 2 3 4 5 6 7 8 9 10; do
+    if [ "$(curl -s --noproxy '*' -o /dev/null -w '%{http_code}' "$P0B/healthz")" = "200" ]; then
+      p0ready=yes; break
+    fi
+    sleep 0.3
+  done
+  check "SYNTHETIC server reaches healthz" "$p0ready" "yes"
+  curl -s --noproxy '*' "$P0B/scores" >"$TMP/p0-syn-scores.html"
+  curl -s --noproxy '*' "$P0B/scores?lang=zh" >"$TMP/p0-syn-scores-zh.html"
+  curl -s --noproxy '*' "$P0B/scores?show_deprecated=1" >"$TMP/p0-syn-scores-dep.html"
+  curl -s --noproxy '*' "$P0B/fp" >"$TMP/p0-syn-fp.html"
+  curl -s --noproxy '*' "$P0B/case?id=E01" >"$TMP/p0-syn-e01.html"
+  kill "$P0PID" 2>/dev/null
+  wait "$P0PID" 2>/dev/null
+  check_grep "SYNTHETIC scatter renders an SVG plot" '<svg' "$TMP/p0-syn-scores.html"
+  check_grep "SYNTHETIC scatter plots run points" '<circle' "$TMP/p0-syn-scores.html"
+  check_grep "SYNTHETIC scatter labels the product" 'SYNTHETIC-A' "$TMP/p0-syn-scores.html"
+  check_grep "SYNTHETIC run carries the demo badge" 'demo-badge' "$TMP/p0-syn-scores.html"
+  check_grep "SYNTHETIC FPR heatmap renders the matrix" 'fpr-heatmap' "$TMP/p0-syn-scores.html"
+  check_grep "SYNTHETIC heatmap sorts worst class first" 'archive_staging' "$TMP/p0-syn-scores.html"
+  check_grep "SYNTHETIC heatmap uses directional bands" 'fpr-3' "$TMP/p0-syn-scores.html"
+  check_grep "zh SYNTHETIC scores renders Chinese charts" 'FPR 热力图' "$TMP/p0-syn-scores-zh.html"
+  check_grep "SYNTHETIC fp violation table activates" 'Real-machine FP violations' "$TMP/p0-syn-fp.html"
+  check_grep "SYNTHETIC fp table labels the product" 'SYNTHETIC-A' "$TMP/p0-syn-fp.html"
+  check_grep "SYNTHETIC fp run carries the demo badge" 'demo-badge' "$TMP/p0-syn-fp.html"
+  check_grep "SYNTHETIC fp table renders the attempt rate" '>5%</td>' "$TMP/p0-syn-fp.html"
+  check_not_grep "SYNTHETIC fp drops the empty state" 'No real-machine run yet.' "$TMP/p0-syn-fp.html"
+  check_grep "SYNTHETIC case evidence activates class-level table" 'Class-level detection from runs' "$TMP/p0-syn-e01.html"
+  check_grep "SYNTHETIC case evidence renders the expected class" 'download_and_execute' "$TMP/p0-syn-e01.html"
+  check_grep "SYNTHETIC case evidence carries the demo badge" 'demo-badge' "$TMP/p0-syn-e01.html"
+  check_grep "SYNTHETIC case evidence renders the tier split" '6/2/0/0' "$TMP/p0-syn-e01.html"
+
+  # P3 (docs/16): the SYNTHETIC fixture exercises the run-card enhancements
+  # (evidence links, version group, modifier tag, label source, duration) and
+  # the deprecated-hide framework. The archived run is hidden by default and
+  # revealed by ?show_deprecated=1; the shipped runs[] stays empty throughout.
+  check_grep "SYNTHETIC run card links the raw report" 'artifacts/syn-001/report.md' "$TMP/p0-syn-scores.html"
+  check_grep "SYNTHETIC run card links the exec log" 'artifacts/syn-001/exec.log' "$TMP/p0-syn-scores.html"
+  check_grep "SYNTHETIC run card links the alerts" 'artifacts/syn-001/alerts.json' "$TMP/p0-syn-scores.html"
+  check_grep "SYNTHETIC evidence region heading" 'Raw evidence' "$TMP/p0-syn-scores.html"
+  check_grep "SYNTHETIC run history grouped by version" 'Version 2026.11' "$TMP/p0-syn-scores.html"
+  check_grep "SYNTHETIC run card shows a modifier tag" 'Configuration Change' "$TMP/p0-syn-scores.html"
+  check_grep "SYNTHETIC run card shows label source counts" 'native=' "$TMP/p0-syn-scores.html"
+  check_grep "SYNTHETIC run card shows the run duration" '123.5 s' "$TMP/p0-syn-scores.html"
+  check_grep "SYNTHETIC archive banner offers the toggle" 'Show archived runs' "$TMP/p0-syn-scores.html"
+  check_not_grep "SYNTHETIC archived run hidden by default" 'SYNTHETIC-ARCHIVED' "$TMP/p0-syn-scores.html"
+  check_grep "SYNTHETIC show_deprecated reveals the archived run" 'SYNTHETIC-ARCHIVED' "$TMP/p0-syn-scores-dep.html"
+  check_grep "SYNTHETIC archived run carries the archived badge" 'archived-badge' "$TMP/p0-syn-scores-dep.html"
+  check_grep "zh SYNTHETIC scores renders Chinese P3 methodology" '复现与输入三元组' "$TMP/p0-syn-scores-zh.html"
+  python3 - "$TMP" "$ROOT" >"$TMP/p0scan.out" 2>&1 <<'PYEOF'
+import glob, os, sys
+sys.path.insert(0, os.path.join(sys.argv[2], "tools"))
+import gen_dashboard_data as gdd
+bad = []
+for p in sorted(glob.glob(os.path.join(sys.argv[1], "p0-syn-*.html"))):
+    hits = gdd.sensitive_hits(open(p, encoding="utf-8").read())
+    if hits:
+        bad.append("%s: %s" % (os.path.basename(p), hits[:2]))
+# The fixture itself must be public-safe too.
+hits = gdd.sensitive_hits(open(os.path.join(sys.argv[1], "synthetic_data.json"), encoding="utf-8").read())
+if hits:
+    bad.append("synthetic_data.json: %s" % hits[:2])
+print("p0-scan-clean" if not bad else "p0-scan-broken: " + "; ".join(bad))
+PYEOF
+  check "SYNTHETIC served pages + fixture pass sensitive scan" "$(cat "$TMP/p0scan.out")" "p0-scan-clean"
+else
+  echo "WARN: go not found - P2 dashboard HTTP checks SKIPPED (install Go to gate them)"
+fi
 
 echo ""
 if [ "$fails" -eq 0 ]; then

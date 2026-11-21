@@ -1,0 +1,46 @@
+{
+ "fetch": {
+  "source": "synthetic-g3-fixture",
+  "window_lo_ms": 1794818000000,
+  "window_hi_ms": 1794818008500,
+  "count": 3,
+  "complete": true
+ },
+ "alerts": [
+  {
+   "timestamp": "2026-11-16T08:33:20.500Z",
+   "event_kind": "alert",
+   "rule_id": "exec-recon-nmap",
+   "severity": "high",
+   "signal_class": ["net_scan_external"],
+   "event_source": "execve",
+   "mitre_attack": ["T1046"],
+   "label_source": "native",
+   "host": {"id": "h1", "name": "selftest"},
+   "event_uid": "g3-1"
+  },
+  {
+   "timestamp": "2026-11-16T08:33:22.500Z",
+   "event_kind": "alert",
+   "rule_id": "exec-sysinfo",
+   "severity": "high",
+   "signal_class": ["system_discovery"],
+   "event_source": "execve",
+   "mitre_attack": ["T1046"],
+   "label_source": "native",
+   "host": {"id": "h1", "name": "selftest"},
+   "event_uid": "g3-2"
+  },
+  {
+   "timestamp": "2026-11-16T08:33:24.500Z",
+   "event_kind": "alert",
+   "rule_id": "exec-cred-shadow-read",
+   "severity": "high",
+   "signal_class": ["credential_file_read"],
+   "event_source": "execve",
+   "mitre_attack": [],
+   "host": {"id": "h1", "name": "selftest"},
+   "event_uid": "g3-3"
+  }
+ ]
+}

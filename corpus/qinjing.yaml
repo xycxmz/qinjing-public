@@ -69,7 +69,7 @@ false_positives:
     related_signals: []
     expect: silent
     impact: none
-    verify_rc: 0
+    verify_rc: 7
   - id: FP05
     tactic: BENIGN
     technique: NONE
@@ -294,8 +294,8 @@ false_positives:
     platforms: [linux]
     cmd: 'nc -z -w 2 127.0.0.1 22'
     bin: nc
-    creates_process: true
-    mode: real
+    creates_process: false
+    mode: sim-missing-bin
     expected_signals: []
     related_signals: []
     expect: silent
@@ -1736,14 +1736,14 @@ false_positives:
     related_signals: []
     expect: silent
     impact: none
-    verify_rc: 0
+    verify_rc: 7
 
   - id: FP117
     tactic: BENIGN
     technique: NONE
     name: node exporter metrics head
     platforms: [linux]
-    cmd: 'curl -s --max-time 3 http://127.0.0.1:9100/metrics | head -5'
+    cmd: 'set -o pipefail; curl -s --max-time 3 http://127.0.0.1:9100/metrics | head -5'
     bin: curl
     creates_process: true
     mode: real
@@ -1751,7 +1751,7 @@ false_positives:
     related_signals: []
     expect: silent
     impact: none
-    verify_rc: 0
+    verify_rc: 7
 
   - id: FP118
     tactic: BENIGN
@@ -1766,7 +1766,7 @@ false_positives:
     related_signals: []
     expect: silent
     impact: none
-    verify_rc: 0
+    verify_rc: 7
 
   - id: FP119
     tactic: BENIGN
@@ -1775,8 +1775,8 @@ false_positives:
     platforms: [linux]
     cmd: 'nc -z -w 2 127.0.0.1 443'
     bin: nc
-    creates_process: true
-    mode: real
+    creates_process: false
+    mode: sim-missing-bin
     expected_signals: []
     related_signals: []
     expect: silent
@@ -1790,8 +1790,8 @@ false_positives:
     platforms: [linux]
     cmd: 'nc -z -w 2 127.0.0.1 3306'
     bin: nc
-    creates_process: true
-    mode: real
+    creates_process: false
+    mode: sim-missing-bin
     expected_signals: []
     related_signals: []
     expect: silent
@@ -5283,6 +5283,7 @@ attacks:
     related_signals: []
     expect: detectable
     impact: temporary
+    cleanup: rm -f /tmp/qinjing-stage.sh
   - id: VR119
     tactic: TA0002
     technique: T1059.004
@@ -5361,6 +5362,7 @@ attacks:
     related_signals: []
     expect: detectable
     impact: temporary
+    cleanup: rm -f /tmp/qinjing-eln
   - id: VR125
     tactic: TA0002
     technique: T1059.004
@@ -5504,6 +5506,7 @@ attacks:
     related_signals: []
     expect: detectable
     impact: temporary
+    cleanup: rm -f /tmp/qinjing-f
   - id: VR136
     tactic: TA0002
     technique: T1059.004
@@ -6518,6 +6521,7 @@ attacks:
     related_signals: []
     expect: detectable
     impact: destructive
+    cleanup: rm -f /tmp/qinjing-pam-bak
   - id: VR214
     tactic: TA0003
     technique: T1556.003
@@ -7116,6 +7120,7 @@ attacks:
     related_signals: []
     expect: detectable
     impact: temporary
+    cleanup: rm -f /tmp/qinjing-shadow-copy
   - id: VR260
     tactic: TA0006
     technique: T1003.008
@@ -7246,6 +7251,7 @@ attacks:
     related_signals: []
     expect: detectable
     impact: temporary
+    cleanup: rm -f /tmp/qinjing-cat
   - id: VR270
     tactic: TA0004
     technique: T1548.001
@@ -8481,6 +8487,7 @@ attacks:
     related_signals: []
     expect: detectable
     impact: temporary
+    cleanup: rm -f /tmp/qinjing-etc.tgz
   - id: VR365
     tactic: TA0009
     technique: T1074.001
@@ -8494,6 +8501,7 @@ attacks:
     related_signals: []
     expect: detectable
     impact: temporary
+    cleanup: rm -f /tmp/qinjing-root.tgz
   - id: VR366
     tactic: TA0009
     technique: T1074.001
@@ -8533,6 +8541,7 @@ attacks:
     related_signals: []
     expect: detectable
     impact: temporary
+    cleanup: rm -f /tmp/qinjing-secure.gz
   - id: VR369
     tactic: TA0009
     technique: T1074.001
@@ -8546,6 +8555,7 @@ attacks:
     related_signals: []
     expect: detectable
     impact: temporary
+    cleanup: rm -f /tmp/qinjing-shadow.bz2
   - id: VR370
     tactic: TA0009
     technique: T1074.001
@@ -8559,6 +8569,7 @@ attacks:
     related_signals: []
     expect: detectable
     impact: temporary
+    cleanup: rm -f /tmp/qinjing-msg.xz
   - id: VR371
     tactic: TA0009
     technique: T1074.001
@@ -8585,6 +8596,7 @@ attacks:
     related_signals: []
     expect: detectable
     impact: temporary
+    cleanup: rm -f /tmp/qinjing-logs.tgz
   - id: VR373
     tactic: TA0009
     technique: T1074.001
@@ -8806,6 +8818,7 @@ attacks:
     related_signals: []
     expect: detectable
     impact: temporary
+    cleanup: rm -f /tmp/qinjing-cfg.json
   - id: VR390
     tactic: TA0040
     technique: T1561.001
@@ -10444,6 +10457,7 @@ attacks:
     related_signals: []
     expect: detectable
     impact: temporary
+    cleanup: rm -f /tmp/qinjing-stage.tar.gz
   - id: VR516
     tactic: TA0009
     technique: T1074.001
@@ -10457,6 +10471,7 @@ attacks:
     related_signals: []
     expect: detectable
     impact: temporary
+    cleanup: rm -f /tmp/qinjing-ssh.tar.gz
   - id: VR517
     tactic: TA0009
     technique: T1074.001
@@ -10483,6 +10498,7 @@ attacks:
     related_signals: []
     expect: detectable
     impact: temporary
+    cleanup: rm -f /tmp/qinjing-home.tar.bz2
   - id: VR519
     tactic: TA0009
     technique: T1074.001
@@ -13212,6 +13228,7 @@ attacks:
     related_signals: []
     expect: detectable
     impact: temporary
+    cleanup: rm -f /tmp/qinjing-diskimg.raw
   - id: VR577
     tactic: TA0005
     technique: T1070.006
@@ -14314,4 +14331,17 @@ attacks:
     expected_signals: [exfil_transfer]
     related_signals: [lateral_ssh_tunnel]
     expect: detectable
+    impact: none
+  - id: CAL03
+    tactic: TA0007
+    technique: T1673
+    name: 'enumerate vms'
+    platforms: [linux]
+    cmd: 'acrnctl list'
+    bin: 'acrnctl'
+    creates_process: true
+    mode: sim-missing-bin
+    expected_signals: []
+    related_signals: []
+    expect: gap
     impact: none

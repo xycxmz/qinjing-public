@@ -75,9 +75,19 @@ def main(argv=None):
             print("FAIL %-19s manifest %s != actual %s (%s edited without"
                   " refreeze?)" % (label, frozen[:12], actual[:12], rel))
             mismatches += 1
+    # C9: fair-config is a frozen declaration (profile + applicable scope),
+    # not a file hash; check its presence separately from the sha tally.
+    fc = manifest.get("fair_config") or {}
+    fc_ok = bool(fc.get("profile") and fc.get("applicable_scope"))
+    if fc_ok:
+        print("ok   %-19s profile=%s, scope frozen" % ("fair_config",
+                                                       fc["profile"]))
+    else:
+        print("FAIL %-19s missing profile/applicable_scope (C9)"
+              % "fair_config")
     print("manifest freshness: %d/%d sha256 match"
           % (len(entries) - mismatches, len(entries)))
-    return 1 if mismatches else 0
+    return 1 if (mismatches or not fc_ok) else 0
 
 
 if __name__ == "__main__":
